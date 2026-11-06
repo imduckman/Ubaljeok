@@ -1,0 +1,28 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+frontend/dist/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+
+# Local tooling
+.vscode/
+.idea/
+.DS_Store
+
+# Python virtual envs
+.venv/
+venv/
+
+# Coverage and logs
+.coverage
+htmlcov/
+*.log
