@@ -29,6 +29,7 @@ ubaljeok/
 │   └── PULL_REQUEST_TEMPLATE.md
 ├── API.md                     # API 계약 초안
 ├── RULES.md                   # Git 협업 규칙
+├── Guide.md                   # 팀원·AI 작업 절차 및 실행 안내
 ├── compose.yaml               # 개발용 통합 실행
 ├── .env.example
 └── README.md
@@ -86,4 +87,5 @@ pytest
 
 ## 문서
 - 협업 규칙: [`RULES.md`](./RULES.md)
+- 팀원·AI 작업 가이드: [`Guide.md`](./Guide.md)
 - API 초안: [`API.md`](./API.md)
