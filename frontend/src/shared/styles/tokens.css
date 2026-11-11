@@ -1,0 +1,62 @@
+/*
+ * 우발적 UI 디자인 토큰
+ * 색·크기·모양 값은 이 파일에서만 정의하고, 컴포넌트에서는 var(--이름)으로만 사용합니다.
+ * 기준 문서: docs/UI-STYLEGUIDE.md
+ */
+:root {
+  /* 뜻이 있는 색: 우리 그룹 */
+  --us: #f2426d;
+  --us-dark: #c81e52;
+  --us-light: #ffe3e9;
+  --us-light-edge: #ffc9d5;
+
+  /* 뜻이 있는 색: 다른 그룹 */
+  --them: #4f62f2;
+  --them-dark: #3747cc;
+  --them-light: #e4e8ff;
+
+  /* 뜻이 있는 색: 코인 */
+  --coin: #ffb800;
+  --coin-dark: #d99a00;
+  --coin-light: #fff1c9;
+  --coin-text: #6b4a00;
+  --coin-gain: #8c5a00;
+
+  /* 방문 농도 5단계 (1회, 2회, 3–4회, 5–9회, 10회 이상) */
+  --visit-1: #ffe3e9;
+  --visit-2: #ffbdcb;
+  --visit-3: #fc93ab;
+  --visit-4: #f56a8b;
+  --visit-5: #e8416b;
+
+  /* 바탕과 글자 */
+  --ink: #0e0f14;
+  --ink-2: #5a5c6b;
+  --ink-3: #8a8c99;
+  --page: #f7f8fa;
+  --soft: #f5f6f9;
+  --paper: #ffffff;
+  --line: #ecedf2;
+  --line-strong: #e3e4ea;
+
+  /* 상태 */
+  --error: #d92d20;
+  --error-text: #b42318;
+  --success-text: #1f7a55;
+
+  /* 모서리 */
+  --radius-chip: 6px;
+  --radius-tile: 14px;
+  --radius-input: 16px;
+  --radius-button: 18px;
+  --radius-card: 22px;
+  --radius-sheet: 28px;
+
+  /* 그림자: 눌림은 뒤에 색을 붙여 사용 (예: box-shadow: var(--press) var(--us-dark)) */
+  --press: 0 4px 0;
+  --press-small: 0 2px 0;
+  --float: 0 20px 40px -18px rgba(14, 15, 20, 0.5);
+
+  /* 글자 */
+  --font: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', system-ui, sans-serif;
+}
