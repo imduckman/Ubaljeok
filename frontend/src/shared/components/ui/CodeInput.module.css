@@ -1,0 +1,85 @@
+.wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+  cursor: text;
+}
+
+.tile {
+  height: 56px;
+  border-radius: var(--radius-tile);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.empty {
+  background: var(--soft);
+  box-shadow: var(--press) #ecedf1;
+}
+
+.active {
+  background: var(--paper);
+  box-shadow: inset 0 0 0 2px var(--us);
+}
+
+.pink {
+  background: var(--us-light);
+  color: #9e1240;
+  box-shadow: var(--press) var(--us-light-edge);
+}
+
+.gold {
+  background: var(--coin-light);
+  color: var(--coin-text);
+  box-shadow: var(--press) #f5dc93;
+}
+
+.indigo {
+  background: var(--them-light);
+  color: var(--them-dark);
+  box-shadow: var(--press) #c9d0fb;
+}
+
+.cursor {
+  width: 2px;
+  height: 24px;
+  background: var(--us);
+  animation: blink 1s steps(1) infinite;
+}
+
+.hiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.error {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--error-text);
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}

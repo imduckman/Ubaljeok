@@ -1,0 +1,12 @@
+.card {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--press) var(--line);
+  padding: 16px;
+}
+
+.selected {
+  border: 2px solid var(--us);
+  box-shadow: var(--press) #f7a3b6;
+}

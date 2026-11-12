@@ -1,0 +1,84 @@
+.brand {
+  margin: 26px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-2);
+  letter-spacing: 1px;
+}
+
+.appName {
+  margin: 4px 0 0;
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  line-height: 1.1;
+}
+
+.lead {
+  margin: 10px 0 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  line-height: 1.45;
+}
+
+.highlight {
+  color: var(--us);
+}
+
+.form {
+  margin-top: 78px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.submit {
+  margin-top: 8px;
+}
+
+.switchLink {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.switchLink a {
+  color: var(--us-dark);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.backLink {
+  width: 44px;
+  height: 44px;
+  margin-left: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+}
+
+.title {
+  margin: 16px 0 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  line-height: 1.3;
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.formError {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--error-text);
+}
