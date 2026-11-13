@@ -1,6 +1,11 @@
 import { render, screen } from '@testing-library/react'
+import { vi } from 'vitest'
 
 import App from './App'
+
+vi.mock('./SuwonMap', () => ({
+  default: () => null,
+}))
 
 describe('App', () => {
   it('renders project title', () => {
