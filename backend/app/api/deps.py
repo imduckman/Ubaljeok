@@ -24,11 +24,11 @@ def _as_utc(value: datetime) -> datetime:
 def get_current_user(request: Request, db: DbSession) -> User:
     token = request.cookies.get(settings.session_cookie_name)
     if not token:
-        raise AppError(401, "UNAUTHORIZED", "로그인이 필요합니다.")
+        raise AppError(401, "UNAUTHORIZED", "로그인이 필요해요.")
 
     session = db.scalar(select(UserSession).where(UserSession.token_hash == hash_token(token)))
     if session is None or _as_utc(session.expires_at) <= datetime.now(UTC):
-        raise AppError(401, "UNAUTHORIZED", "로그인이 필요합니다.")
+        raise AppError(401, "UNAUTHORIZED", "로그인이 필요해요.")
     return session.user
 
 
@@ -41,10 +41,10 @@ def require_group_member(group_id: int, user: CurrentUser, db: DbSession) -> Gro
     앞으로 사진·방문·지갑 API도 이 의존성을 써서 다른 그룹 접근을 막는다.
     """
     if db.get(Group, group_id) is None:
-        raise AppError(404, "NOT_FOUND", "그룹을 찾을 수 없습니다.")
+        raise AppError(404, "NOT_FOUND", "그룹을 찾을 수 없어요.")
     membership = db.get(GroupMember, (group_id, user.id))
     if membership is None:
-        raise AppError(403, "NOT_GROUP_MEMBER", "이 그룹에 접근할 권한이 없습니다.")
+        raise AppError(403, "NOT_GROUP_MEMBER", "이 그룹의 멤버만 볼 수 있어요.")
     return membership
 
 

@@ -25,7 +25,7 @@ def test_create_group_makes_creator_owner(
     assert group["name"] == "우발적"
     assert group["my_role"] == "owner"
     assert group["member_count"] == 1
-    assert len(str(group["invite_code"])) == 8
+    assert len(str(group["invite_code"])) == 6
 
 
 def test_join_by_invite_code(

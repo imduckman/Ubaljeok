@@ -20,12 +20,12 @@ from app.schemas.auth import LoginRequest, SignupRequest, UserOut, UserResponse
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 def _invalid_login() -> AppError:
-    return AppError(401, "INVALID_CREDENTIALS", "아이디 또는 비밀번호가 올바르지 않습니다.")
+    return AppError(401, "INVALID_CREDENTIALS", "아이디 또는 비밀번호가 맞지 않아요.")
 
 
 @router.post("/signup", status_code=201, response_model=UserResponse)
 def signup(body: SignupRequest, db: DbSession) -> UserResponse:
-    taken = AppError(409, "LOGIN_ID_TAKEN", "이미 사용 중인 아이디입니다.")
+    taken = AppError(409, "LOGIN_ID_TAKEN", "이미 사용 중인 아이디예요. 다른 아이디를 입력하세요.")
     if db.scalar(select(User.id).where(User.login_id == body.login_id)) is not None:
         raise taken
 

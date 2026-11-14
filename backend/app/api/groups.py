@@ -35,7 +35,7 @@ def _unused_invite_code(db: Session) -> str:
         code = new_invite_code()
         if db.scalar(select(Group.id).where(Group.invite_code == code)) is None:
             return code
-    raise AppError(500, "INVITE_CODE_FAILED", "초대 코드를 만들지 못했습니다. 다시 시도해 주세요.")
+    raise AppError(500, "INVITE_CODE_FAILED", "초대 코드를 만들지 못했어요. 다시 시도하세요.")
 
 
 @router.post("", status_code=201, response_model=GroupResponse)
@@ -60,9 +60,9 @@ def create_group(body: GroupCreateRequest, user: CurrentUser, db: DbSession) -> 
 def join_group(body: GroupJoinRequest, user: CurrentUser, db: DbSession) -> GroupResponse:
     group = db.scalar(select(Group).where(Group.invite_code == body.invite_code))
     if group is None:
-        raise AppError(404, "INVITE_NOT_FOUND", "초대 코드에 해당하는 그룹이 없습니다.")
+        raise AppError(404, "INVITE_NOT_FOUND", "맞는 그룹이 없어요. 초대 코드를 다시 확인하세요.")
 
-    already = AppError(409, "ALREADY_MEMBER", "이미 참여한 그룹입니다.")
+    already = AppError(409, "ALREADY_MEMBER", "이미 참여한 그룹이에요.")
     if db.get(GroupMember, (group.id, user.id)) is not None:
         raise already
 

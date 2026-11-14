@@ -28,5 +28,5 @@ def register_error_handlers(app: FastAPI) -> None:
     ) -> JSONResponse:
         return JSONResponse(
             status_code=400,
-            content=error_body("VALIDATION_ERROR", "요청 형식이 올바르지 않습니다."),
+            content=error_body("VALIDATION_ERROR", "입력한 내용을 다시 확인하세요."),
         )

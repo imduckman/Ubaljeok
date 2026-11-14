@@ -15,7 +15,7 @@ _DKLEN = 64
 
 # 헷갈리는 글자(0, O, 1, I)를 뺀 초대 코드 문자
 INVITE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-INVITE_CODE_LENGTH = 8
+INVITE_CODE_LENGTH = 6  # 프론트 CodeTile이 6칸 (docs/UI-STYLEGUIDE.md)
 
 
 def hash_password(password: str) -> str:
