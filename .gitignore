@@ -26,3 +26,6 @@ venv/
 .coverage
 htmlcov/
 *.log
+
+# 로컬에서 저장된 업로드 사진 (MEDIA_ROOT 기본값)
+backend/media/

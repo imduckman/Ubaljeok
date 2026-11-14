@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import CurrentUser, DbSession, GroupMembership
 from app.core.errors import AppError
 from app.core.security import new_invite_code
-from app.models import Group, GroupMember, User
+from app.models import Group, GroupMember, User, Visit
 from app.schemas.group import (
     GroupCreateRequest,
     GroupJoinRequest,
@@ -41,6 +41,9 @@ def _group_out(db: Session, group: Group, my_role: Role) -> GroupOut:
     members = [
         MemberOut(user_id=uid, nickname=nickname, role=role) for uid, nickname, role in rows
     ]
+    visited_region_count = db.scalar(
+        select(func.count(func.distinct(Visit.region_id))).where(Visit.group_id == group.id)
+    )
     return GroupOut(
         id=group.id,
         name=group.name,
@@ -48,6 +51,7 @@ def _group_out(db: Session, group: Group, my_role: Role) -> GroupOut:
         my_role=my_role,
         member_count=len(members),
         members=members,
+        visited_region_count=visited_region_count or 0,
     )
 
 
