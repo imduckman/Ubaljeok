@@ -5,14 +5,15 @@ from typing import Any, Literal
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from app.api.deps import CurrentUser
+from app.schemas.base import ApiModel
 
 router = APIRouter(prefix="/regions", tags=["regions"])
 SOURCE_VERSION = "ver20261001"
 BOUNDARY_FILE = Path(__file__).with_name("data") / f"suwon-{SOURCE_VERSION}.geojson"
 
 
-class RegionDataset(BaseModel):
+class RegionDataset(ApiModel):
     source_version: str
     status: Literal["active"]
     source_url: str
@@ -29,15 +30,14 @@ DATASET = RegionDataset(
 )
 
 
-class Region(BaseModel):
+class Region(ApiModel):
     name: str
     region_code: str
-    adm_cd: str
-    adm_cd2: str
+    sigungu_name: str
 
 
-class RegionList(BaseModel):
-    dataset: RegionDataset
+class RegionList(ApiModel):
+    data_version: str
     regions: list[Region]
 
 
@@ -50,26 +50,25 @@ def load_boundaries() -> dict[str, Any]:
     boundaries = json.loads(BOUNDARY_FILE.read_text(encoding="utf-8-sig"))
     for feature in boundaries["features"]:
         props = feature["properties"]
-        props["region_code"] = props["adm_cd2"]
+        props["regionCode"] = props["adm_cd2"]
     return boundaries
 
 
 @router.get("")
-def list_regions() -> RegionList:
+def list_regions(_user: CurrentUser) -> RegionList:
     regions = []
     for feature in load_boundaries()["features"]:
         props = feature["properties"]
         regions.append(
             Region(
-                name=props["adm_nm"],
-                region_code=props["region_code"],
-                adm_cd=props["adm_cd"],
-                adm_cd2=props["adm_cd2"],
+                name=props["adm_nm"].rsplit(" ", 1)[-1],
+                region_code=props["regionCode"],
+                sigungu_name=props["sggnm"],
             )
         )
-    return RegionList(dataset=DATASET, regions=regions)
+    return RegionList(data_version=SOURCE_VERSION, regions=regions)
 
 
 @router.get("/geojson", response_class=GeoJSONResponse)
-def region_boundaries() -> dict[str, Any]:
-    return {**load_boundaries(), "dataset": DATASET.model_dump()}
+def region_boundaries(_user: CurrentUser) -> dict[str, Any]:
+    return {**load_boundaries(), "dataVersion": SOURCE_VERSION, "dataset": DATASET.model_dump(by_alias=True)}
