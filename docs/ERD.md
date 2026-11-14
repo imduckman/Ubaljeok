@@ -128,7 +128,9 @@ erDiagram
 
 ## 테이블별 설명과 제약조건
 
-### ★ users — 계정
+[0001_auth_groups](../backend/alembic/versions/0001_auth_groups.py)는 users, sessions, groups, group_members를 생성합니다. 나머지 테이블은 설계 초안입니다. 현재 행정동 조회 API는 GeoJSON 경계 파일을 사용합니다.
+
+### ★ users (구현) — 계정
 | 컬럼 | 타입 | 제약 | 설명 |
 | --- | --- | --- | --- |
 | id | BIGSERIAL | PK | |
@@ -137,16 +139,16 @@ erDiagram
 | nickname | VARCHAR(30) | NOT NULL | 화면 표시 이름 |
 | created_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() | |
 
-### ★ sessions — 로그인 상태 (서버 세션 + HttpOnly 쿠키)
+### ★ sessions (구현) — 로그인 상태 (서버 세션 + HttpOnly 쿠키)
 | 컬럼 | 타입 | 제약 | 설명 |
 | --- | --- | --- | --- |
 | id | BIGSERIAL | PK | |
 | user_id | BIGINT | FK → users, NOT NULL, ON DELETE CASCADE | |
 | token_hash | VARCHAR(64) | UNIQUE, NOT NULL | 쿠키 토큰의 해시만 저장 |
 | created_at | TIMESTAMPTZ | NOT NULL | |
-| expires_at | TIMESTAMPTZ | NOT NULL | 만료 후 무효 |
+| expires_at | TIMESTAMPTZ | NOT NULL | 기본 만료 기간 7일. SESSION_TTL_DAYS로 설정 |
 
-### ★ groups — 친구 그룹
+### ★ groups (구현) — 친구 그룹
 | 컬럼 | 타입 | 제약 | 설명 |
 | --- | --- | --- | --- |
 | id | BIGSERIAL | PK | |
@@ -155,7 +157,7 @@ erDiagram
 | owner_id | BIGINT | FK → users, NOT NULL | 그룹장 (구매·업그레이드 권한) |
 | created_at | TIMESTAMPTZ | NOT NULL | |
 
-### ★ group_members — 그룹 소속
+### ★ group_members (구현) — 그룹 소속
 | 컬럼 | 타입 | 제약 | 설명 |
 | --- | --- | --- | --- |
 | group_id | BIGINT | PK, FK → groups | |
@@ -170,7 +172,7 @@ erDiagram
 | 컬럼 | 타입 | 제약 | 설명 |
 | --- | --- | --- | --- |
 | id | BIGSERIAL | PK | |
-| adm_code | VARCHAR(10) | UNIQUE, NOT NULL | 행정동 코드 (지도 담당과 공유하는 키) |
+| adm_code | VARCHAR(10) | UNIQUE, NOT NULL | 행정안전부 행정동 코드 adm_cd2의 10자리 문자열. 공개 API 필드는 regionCode |
 | name | VARCHAR(30) | NOT NULL | 예: 영통1동 |
 | sigungu_name | VARCHAR(30) | NOT NULL | 예: 수원시 영통구 |
 | boundary | geometry(MultiPolygon, 4326) | NOT NULL, GIST 인덱스 | 위치 판정용 원본 경계 |
@@ -274,6 +276,4 @@ erDiagram
 
 ## 팀 논의가 필요한 점
 1. **photos.location 저장 여부** — 저장 파일에서는 GPS를 지우지만, DB에 좌표를 남길지(재판정·디버깅용) 동네 코드만 남길지 결정 필요
-2. **regions.adm_code 형식** — 지도 담당(희재)이 쓰는 행정동 데이터(admdongkor)의 코드 자리수와 맞추기
-3. **세션 만료 기간** — 예: 7일
-4. **사진 삭제 시** — 기획안대로 코인·소유권은 되돌리지 않음. photos 행을 지울지, 삭제 표시만 할지 결정 필요
+2. **사진 삭제 시** — 기획안대로 코인·소유권은 되돌리지 않음. photos 행을 지울지, 삭제 표시만 할지 결정 필요
