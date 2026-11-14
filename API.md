@@ -1,7 +1,7 @@
 # API 계약 초안
 
 > 담당: 승민 (DB·백엔드) · 데이터 구조는 [ERD 초안](https://github.com/imduckman/Ubaljeok/pull/12) 참고
-> ✅ 구현됨: 인증·그룹 (`feature/backend/auth-group`) · ★ 2주차 마일스톤 필요 API · 나머지는 초안
+> ✅ 구현됨: 인증·그룹 (`feature/backend/auth-group`), 동네·사진·방문 (`feature/backend/photo-visit`) · ★ 2주차 마일스톤 필요 API · 나머지는 초안
 
 ## 공통
 
@@ -43,7 +43,7 @@
 | 409 | 중복·충돌 | `LOGIN_ID_TAKEN`, `ALREADY_MEMBER`, `GROUP_FULL`, `DUPLICATE_PHOTO` |
 | 413 | 파일이 너무 큼 | `FILE_TOO_LARGE` |
 | 415 | 지원하지 않는 형식 | `UNSUPPORTED_FORMAT` |
-| 422 | 처리할 수 없는 내용 | `REGION_REQUIRED` |
+| 422 | 처리할 수 없는 내용 | `REGION_REQUIRED`, `UNKNOWN_REGION` |
 
 ---
 
@@ -131,14 +131,16 @@
   "members": [
     { "userId": 1, "nickname": "승민", "role": "owner" },
     { "userId": 2, "nickname": "희재", "role": "member" }
-  ]
+  ],
+  "visitedRegionCount": 3
 }
 ```
 - `myRole`, `role`: `owner`(그룹장) / `member`
 - `members`: 참여 순서대로 (그룹장이 첫 번째)
 - 초대 코드: **6자리 영문 대문자·숫자** (헷갈리는 `0 O 1 I` 제외), 유효 기간 없음
 - 그룹 최대 인원: **6명**
-- 추가 예정: `visitedRegionCount`(방문 기능, 2주차), `walletBalance`(지갑 기능, 3주차). 추가 전까지 응답에 없음
+- `visitedRegionCount`: 그룹이 한 번이라도 방문한 동네 수
+- 추가 예정: `walletBalance`(지갑 기능, 3주차). 추가 전까지 응답에 없음
 
 ### ★ 🔒 `POST /api/groups`
 그룹 생성 (만든 사람이 그룹장)
@@ -194,26 +196,45 @@
 
 ---
 
-## 동네(행정동) — 초안
+## 동네(행정동) ✅
 
-### ★ 🔒 `GET /api/regions`
-지원 지역의 행정동 목록 (위치 없는 사진의 **수동 동네 선택**용)
+경계 데이터: [vuski/admdongkor](https://github.com/vuski/admdongkor) `ver20261001`의 수원시 행정동 **44개**
+(원자료 통계청 SGIS, 공공누리 제1유형 / 가공 데이터 CC BY 4.0). 출처·버전 규칙은 `backend/app/data/README.md`.
+`regionCode`는 **행정안전부 10자리 행정동 코드**(`adm_cd2`)를 문자열로 쓴다 (RULES.md 공통 API 규칙).
+
+### ★ `GET /api/regions`
+지원 지역의 행정동 목록 (위치 없는 사진의 **수동 동네 선택**용). 로그인 없이 호출 가능.
 
 **Response 200**
 ```json
 {
-  "dataVersion": "ver20261001",
+  "dataset": {
+    "sourceVersion": "ver20261001",
+    "status": "active",
+    "sourceUrl": "https://github.com/vuski/admdongkor/tree/master/ver20261001",
+    "licenseUrl": "https://github.com/vuski/admdongkor/blob/master/LICENSE-DATA",
+    "attribution": "원자료: 통계청 SGIS (공공누리 제1유형). 가공: vuski/admdongkor (CC BY 4.0)."
+  },
   "regions": [
-    { "regionCode": "4111759000", "name": "영통1동", "sigunguName": "수원시 영통구" }
+    {
+      "regionCode": "4111156000",
+      "name": "파장동",
+      "sigunguName": "수원시장안구",
+      "fullName": "경기도 수원시장안구 파장동"
+    }
   ]
 }
 ```
-- `regionCode`는 ERD의 `regions.adm_code`와 같은 값 (행정동 코드 종류는 지도 담당과 확정 예정)
-- 지도 경계(GeoJSON)는 이 API가 아니라 프론트 정적 파일로 제공 (`dataVersion` 일치)
+
+### `GET /api/regions/geojson`
+지도 표시용 경계 (`application/geo+json`). 로그인 없이 호출 가능.
+- GeoJSON `FeatureCollection` + 최상위 `dataset`(위와 같은 모양)
+- 각 `feature.properties`: 원본 필드(`adm_nm`, `adm_cd`, `adm_cd2`, `sgg`, `sggnm` …) + **`regionCode`**
+- 위치 판정은 서버 DB(PostGIS)에 적재한 **같은 파일·같은 버전**의 원본 경계로 한다
 
 ---
 
-## 사진 — 초안
+## 사진 ✅
 
 ### ★ 🔒 `POST /api/photos`
 사진 업로드 → 서버가 EXIF를 다시 읽고 동네 판정 → 방문 기록
@@ -254,7 +275,21 @@
 }
 ```
 - `locationSource`: `exif`(사진 GPS로 판정) / `manual`(직접 선택)
-- `ineligibleReason`: `null` 또는 `no_gps`, `no_taken_at`, `out_of_area`, `future_date`, `older_than_30_days`
+- `ineligibleReason`: `null` 또는 아래 값
+
+| 값 | 뜻 |
+| --- | --- |
+| `no_gps` | 사진에 위치 정보가 없음 (직접 고른 동네로 기록) |
+| `out_of_area` | 위치가 지원 지역(수원시) 밖 |
+| `ambiguous_location` | 동네 경계선 위라 동네를 하나로 정하지 못함 |
+| `no_taken_at` | 촬영 시각이 없음 |
+| `future_date` | 촬영 시각이 미래 |
+| `older_than_30_days` | 업로드 시점 기준 30일보다 오래된 사진 |
+
+- 방문 날짜(`visitDate`): 촬영 시각의 **KST 날짜**. 촬영 시각이 없으면 업로드한 날
+- 촬영 시각에 시간대(OffsetTimeOriginal)가 없으면 국내 촬영으로 보고 KST로 처리
+- 같은 (그룹, 날짜, 동네)에 이미 방문이 있으면 그 방문에 사진만 추가 (`isNewVisit: false`)
+- 보상 대상이 아닌 방문(수동 등)에 보상 대상 사진이 추가되면 그때 **한 번만** `rewardEligible: true`로 바뀜
 - GPS 좌표는 응답으로 돌려주지 않음
 - 코인 지급 결과는 3주차(지갑·보상)에서 응답에 추가 예정
 
@@ -264,8 +299,9 @@
 | --- | --- |
 | 그룹 멤버 아님 | `403 NOT_GROUP_MEMBER` |
 | JPEG 아님 | `415 UNSUPPORTED_FORMAT` |
-| 용량 초과 (상한은 팀 논의) | `413 FILE_TOO_LARGE` |
-| GPS 없음/지역 밖인데 `regionCode`도 없음 | `422 REGION_REQUIRED` |
+| 15MB 초과 (`MAX_UPLOAD_MB`) | `413 FILE_TOO_LARGE` |
+| GPS로 동네를 못 정했는데 `regionCode`도 없음 | `422 REGION_REQUIRED` |
+| `regionCode`가 지원하는 동네가 아님 | `422 UNKNOWN_REGION` |
 | 같은 그룹에 같은 사진 재업로드 | `409 DUPLICATE_PHOTO` |
 
 ### 🔒 `GET /api/photos/{photoId}/file`
@@ -275,7 +311,7 @@
 
 ---
 
-## 방문·지도 — 초안
+## 방문·지도 ✅
 
 ### ★ 🔒 `GET /api/visits/map?groupId={groupId}`
 그룹의 동네별 방문 농도 (지도 색칠용)
@@ -315,6 +351,8 @@
   ]
 }
 ```
+- 방문은 최신 날짜부터
+- **Errors**: `403 NOT_GROUP_MEMBER`, `404 NOT_FOUND`(그룹 또는 동네 없음)
 
 ---
 
@@ -329,8 +367,9 @@
 - 인증: JWT 대신 **세션 + HttpOnly 쿠키** (기획안 기준)
 - 필드 표기: **camelCase**
 - 초대 코드: **6자리**, 유효 기간 없음 / 그룹 최대 **6명**
+- 행정동 코드: 행정안전부 **10자리**(`adm_cd2`) 문자열
+- 사진 용량 상한: **15MB** (`MAX_UPLOAD_MB`로 변경 가능)
+- 사진의 GPS 좌표는 **DB에도 저장하지 않음** (동네 판정에만 쓰고 버림. 판정 결과인 동네만 저장)
 
 ## 팀 논의가 필요한 점
 1. **group 전달 방식**: 사진·방문 API는 지금 `groupId`를 body/쿼리로 받음. `/api/groups/{groupId}/photos`처럼 주소에 넣을지 프론트와 결정
-2. **사진 용량 상한**: 예) 15MB
-3. **regionCode 형식**: 지도 담당(희재)과 행정동 코드 종류(`adm_cd` 8자리 / `adm_cd2` 10자리) 확정
