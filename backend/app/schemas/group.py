@@ -1,11 +1,13 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
+
+from app.schemas.base import ApiModel
 
 Role = Literal["owner", "member"]
 
 
-class GroupCreateRequest(BaseModel):
+class GroupCreateRequest(ApiModel):
     name: str = Field(min_length=1, max_length=30)
 
     @field_validator("name")
@@ -17,7 +19,7 @@ class GroupCreateRequest(BaseModel):
         return value
 
 
-class GroupJoinRequest(BaseModel):
+class GroupJoinRequest(ApiModel):
     invite_code: str = Field(min_length=4, max_length=12)
 
     @field_validator("invite_code")
@@ -27,42 +29,30 @@ class GroupJoinRequest(BaseModel):
         return value.strip().upper()
 
 
-class GroupOut(BaseModel):
-    id: int
-    name: str
-    invite_code: str
-    my_role: Role
-    member_count: int
-
-
-class GroupResponse(BaseModel):
-    group: GroupOut
-
-
-class GroupSummary(BaseModel):
-    id: int
-    name: str
-    my_role: Role
-    member_count: int
-
-
-class GroupListResponse(BaseModel):
-    groups: list[GroupSummary]
-
-
-class MemberOut(BaseModel):
+class MemberOut(ApiModel):
     user_id: int
     nickname: str
     role: Role
 
 
-class GroupDetail(BaseModel):
+class GroupOut(ApiModel):
+    """그룹 생성·참여·목록·상세가 모두 같은 모양으로 응답한다(프론트 카드에 바로 사용).
+
+    방문 동네 수(visitedRegionCount)는 방문 기능, 지갑 잔액(walletBalance)은
+    지갑 기능이 생기면 추가한다.
+    """
+
     id: int
     name: str
     invite_code: str
     my_role: Role
+    member_count: int
     members: list[MemberOut]
 
 
-class GroupDetailResponse(BaseModel):
-    group: GroupDetail
+class GroupResponse(ApiModel):
+    group: GroupOut
+
+
+class GroupListResponse(ApiModel):
+    groups: list[GroupOut]

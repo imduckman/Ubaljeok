@@ -77,14 +77,14 @@ def login() -> LoginFn:
         res = client.post(
             "/auth/signup",
             json={
-                "login_id": login_id,
+                "loginId": login_id,
                 "password": DEFAULT_PASSWORD,
                 "nickname": nickname or login_id,
             },
         )
         assert res.status_code == 201, res.text
         res = client.post(
-            "/auth/login", json={"login_id": login_id, "password": DEFAULT_PASSWORD}
+            "/auth/login", json={"loginId": login_id, "password": DEFAULT_PASSWORD}
         )
         assert res.status_code == 200, res.text
         return res.json()["user"]

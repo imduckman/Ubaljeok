@@ -18,17 +18,17 @@ def test_password_hash_is_not_plain_and_verifies() -> None:
 def test_signup_success(client: TestClient) -> None:
     res = client.post(
         "/auth/signup",
-        json={"login_id": "seungmin", "password": DEFAULT_PASSWORD, "nickname": " 승민 "},
+        json={"loginId": "seungmin", "password": DEFAULT_PASSWORD, "nickname": " 승민 "},
     )
     assert res.status_code == 201
     user = res.json()["user"]
-    assert user["login_id"] == "seungmin"
+    assert user["loginId"] == "seungmin"
     assert user["nickname"] == "승민"
     assert "password" not in str(res.json())
 
 
 def test_signup_duplicate_login_id(client: TestClient) -> None:
-    body = {"login_id": "seungmin", "password": DEFAULT_PASSWORD, "nickname": "승민"}
+    body = {"loginId": "seungmin", "password": DEFAULT_PASSWORD, "nickname": "승민"}
     assert client.post("/auth/signup", json=body).status_code == 201
 
     res = client.post("/auth/signup", json=body)
@@ -38,10 +38,10 @@ def test_signup_duplicate_login_id(client: TestClient) -> None:
 
 def test_signup_invalid_input(client: TestClient) -> None:
     cases = [
-        {"login_id": "ab", "password": DEFAULT_PASSWORD, "nickname": "짧은아이디"},
-        {"login_id": "Seungmin", "password": DEFAULT_PASSWORD, "nickname": "대문자"},
-        {"login_id": "seungmin", "password": "short", "nickname": "짧은비번"},
-        {"login_id": "seungmin", "password": DEFAULT_PASSWORD, "nickname": "   "},
+        {"loginId": "ab", "password": DEFAULT_PASSWORD, "nickname": "짧은아이디"},
+        {"loginId": "Seungmin", "password": DEFAULT_PASSWORD, "nickname": "대문자"},
+        {"loginId": "seungmin", "password": "short", "nickname": "짧은비번"},
+        {"loginId": "seungmin", "password": DEFAULT_PASSWORD, "nickname": "   "},
     ]
     for body in cases:
         res = client.post("/auth/signup", json=body)
@@ -52,9 +52,9 @@ def test_signup_invalid_input(client: TestClient) -> None:
 def test_login_sets_httponly_cookie_and_me_works(client: TestClient) -> None:
     client.post(
         "/auth/signup",
-        json={"login_id": "seungmin", "password": DEFAULT_PASSWORD, "nickname": "승민"},
+        json={"loginId": "seungmin", "password": DEFAULT_PASSWORD, "nickname": "승민"},
     )
-    res = client.post("/auth/login", json={"login_id": "seungmin", "password": DEFAULT_PASSWORD})
+    res = client.post("/auth/login", json={"loginId": "seungmin", "password": DEFAULT_PASSWORD})
     assert res.status_code == 200
     set_cookie = res.headers["set-cookie"]
     assert "session=" in set_cookie
@@ -62,19 +62,19 @@ def test_login_sets_httponly_cookie_and_me_works(client: TestClient) -> None:
 
     me = client.get("/auth/me")
     assert me.status_code == 200
-    assert me.json()["user"]["login_id"] == "seungmin"
+    assert me.json()["user"]["loginId"] == "seungmin"
 
 
 def test_login_failure_does_not_reveal_which_part_is_wrong(client: TestClient) -> None:
     client.post(
         "/auth/signup",
-        json={"login_id": "seungmin", "password": DEFAULT_PASSWORD, "nickname": "승민"},
+        json={"loginId": "seungmin", "password": DEFAULT_PASSWORD, "nickname": "승민"},
     )
     wrong_password = client.post(
-        "/auth/login", json={"login_id": "seungmin", "password": "wrong-password"}
+        "/auth/login", json={"loginId": "seungmin", "password": "wrong-password"}
     )
     unknown_user = client.post(
-        "/auth/login", json={"login_id": "nobody", "password": DEFAULT_PASSWORD}
+        "/auth/login", json={"loginId": "nobody", "password": DEFAULT_PASSWORD}
     )
     for res in (wrong_password, unknown_user):
         assert res.status_code == 401

@@ -9,25 +9,18 @@ from app.core.security import new_invite_code
 from app.models import Group, GroupMember, User
 from app.schemas.group import (
     GroupCreateRequest,
-    GroupDetail,
-    GroupDetailResponse,
     GroupJoinRequest,
     GroupListResponse,
     GroupOut,
     GroupResponse,
-    GroupSummary,
     MemberOut,
+    Role,
 )
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 
+MAX_GROUP_MEMBERS = 6  # 기획안 타깃: 3–6명 친구 그룹
 _MAX_INVITE_CODE_TRIES = 5
-
-
-def _member_count(db: Session, group_id: int) -> int:
-    return db.scalar(
-        select(func.count()).select_from(GroupMember).where(GroupMember.group_id == group_id)
-    ) or 0
 
 
 def _unused_invite_code(db: Session) -> str:
@@ -38,33 +31,57 @@ def _unused_invite_code(db: Session) -> str:
     raise AppError(500, "INVITE_CODE_FAILED", "초대 코드를 만들지 못했어요. 다시 시도하세요.")
 
 
+def _group_out(db: Session, group: Group, my_role: Role) -> GroupOut:
+    rows = db.execute(
+        select(GroupMember.user_id, User.nickname, GroupMember.role)
+        .join(User, User.id == GroupMember.user_id)
+        .where(GroupMember.group_id == group.id)
+        .order_by(GroupMember.joined_at, GroupMember.user_id)
+    ).all()
+    members = [
+        MemberOut(user_id=uid, nickname=nickname, role=role) for uid, nickname, role in rows
+    ]
+    return GroupOut(
+        id=group.id,
+        name=group.name,
+        invite_code=group.invite_code,
+        my_role=my_role,
+        member_count=len(members),
+        members=members,
+    )
+
+
 @router.post("", status_code=201, response_model=GroupResponse)
 def create_group(body: GroupCreateRequest, user: CurrentUser, db: DbSession) -> GroupResponse:
     group = Group(name=body.name, invite_code=_unused_invite_code(db), owner_id=user.id)
     group.members.append(GroupMember(user_id=user.id, role="owner"))
     db.add(group)
     db.commit()
-
-    return GroupResponse(
-        group=GroupOut(
-            id=group.id,
-            name=group.name,
-            invite_code=group.invite_code,
-            my_role="owner",
-            member_count=1,
-        )
-    )
+    return GroupResponse(group=_group_out(db, group, "owner"))
 
 
 @router.post("/join", response_model=GroupResponse)
 def join_group(body: GroupJoinRequest, user: CurrentUser, db: DbSession) -> GroupResponse:
-    group = db.scalar(select(Group).where(Group.invite_code == body.invite_code))
+    # 동시에 여러 명이 참여해도 6명을 넘지 않도록 그룹 행을 잠근다(PostgreSQL에서 동작)
+    group = db.scalar(
+        select(Group).where(Group.invite_code == body.invite_code).with_for_update()
+    )
     if group is None:
         raise AppError(404, "INVITE_NOT_FOUND", "맞는 그룹이 없어요. 초대 코드를 다시 확인하세요.")
 
     already = AppError(409, "ALREADY_MEMBER", "이미 참여한 그룹이에요.")
     if db.get(GroupMember, (group.id, user.id)) is not None:
         raise already
+
+    member_count = db.scalar(
+        select(func.count()).select_from(GroupMember).where(GroupMember.group_id == group.id)
+    )
+    if (member_count or 0) >= MAX_GROUP_MEMBERS:
+        raise AppError(
+            409,
+            "GROUP_FULL",
+            f"그룹이 꽉 찼어요. 최대 {MAX_GROUP_MEMBERS}명까지 함께할 수 있어요.",
+        )
 
     db.add(GroupMember(group_id=group.id, user_id=user.id, role="member"))
     try:
@@ -73,59 +90,20 @@ def join_group(body: GroupJoinRequest, user: CurrentUser, db: DbSession) -> Grou
         db.rollback()
         raise already from None
 
-    return GroupResponse(
-        group=GroupOut(
-            id=group.id,
-            name=group.name,
-            invite_code=group.invite_code,
-            my_role="member",
-            member_count=_member_count(db, group.id),
-        )
-    )
+    return GroupResponse(group=_group_out(db, group, "member"))
 
 
 @router.get("", response_model=GroupListResponse)
 def list_my_groups(user: CurrentUser, db: DbSession) -> GroupListResponse:
-    counts = (
-        select(GroupMember.group_id, func.count().label("member_count"))
-        .group_by(GroupMember.group_id)
-        .subquery()
-    )
     rows = db.execute(
-        select(Group.id, Group.name, GroupMember.role, counts.c.member_count)
+        select(Group, GroupMember.role)
         .join(GroupMember, GroupMember.group_id == Group.id)
-        .join(counts, counts.c.group_id == Group.id)
         .where(GroupMember.user_id == user.id)
         .order_by(GroupMember.joined_at, Group.id)
     ).all()
-
-    return GroupListResponse(
-        groups=[
-            GroupSummary(id=gid, name=name, my_role=role, member_count=count)
-            for gid, name, role, count in rows
-        ]
-    )
+    return GroupListResponse(groups=[_group_out(db, group, role) for group, role in rows])
 
 
-@router.get("/{group_id}", response_model=GroupDetailResponse)
-def get_group(group_id: int, membership: GroupMembership, db: DbSession) -> GroupDetailResponse:
-    group = membership.group
-    rows = db.execute(
-        select(GroupMember.user_id, User.nickname, GroupMember.role)
-        .join(User, User.id == GroupMember.user_id)
-        .where(GroupMember.group_id == group_id)
-        .order_by(GroupMember.joined_at, GroupMember.user_id)
-    ).all()
-
-    return GroupDetailResponse(
-        group=GroupDetail(
-            id=group.id,
-            name=group.name,
-            invite_code=group.invite_code,
-            my_role=membership.role,
-            members=[
-                MemberOut(user_id=uid, nickname=nickname, role=role)
-                for uid, nickname, role in rows
-            ],
-        )
-    )
+@router.get("/{group_id}", response_model=GroupResponse)
+def get_group(group_id: int, membership: GroupMembership, db: DbSession) -> GroupResponse:
+    return GroupResponse(group=_group_out(db, membership.group, membership.role))
