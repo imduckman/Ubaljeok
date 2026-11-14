@@ -28,20 +28,23 @@ export function GroupProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const [groups, setGroups] = useState<Group[]>([])
   const [currentGroupId, setCurrentGroupId] = useState<number | null>(readSavedGroupId)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [loadedUser, setLoadedUser] = useState<typeof user>(null)
+  const isLoading = user !== null && (loadedUser !== user || isRefreshing)
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null)
 
   const refreshGroups = useCallback(async () => {
-    setIsLoading(true)
+    setIsRefreshing(true)
     setLoadErrorMessage(null)
     try {
       setGroups(await groupApi.listMyGroups())
     } catch (error) {
       setLoadErrorMessage(getErrorMessage(error, '그룹을 불러오지 못했어요.'))
     } finally {
-      setIsLoading(false)
+      setLoadedUser(user)
+      setIsRefreshing(false)
     }
-  }, [])
+  }, [user])
 
   useEffect(() => {
     if (user) {
