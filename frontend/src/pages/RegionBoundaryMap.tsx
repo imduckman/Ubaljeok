@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Map, setWorkerUrl } from 'maplibre-gl'
-import type { GeoJSONSource } from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { request } from '../api/client'
+import { getRegionBoundaries } from '../api/endpoints/regions'
 
 setWorkerUrl(workerUrl)
 
@@ -17,7 +16,7 @@ export function RegionBoundaryMap() {
     const mapInstance = { current: null as Map | null }
     const load = async () => {
       try {
-        const boundaries = await request<Exclude<Parameters<GeoJSONSource['setData']>[0], string>>('/regions/geojson', { signal: controller.signal })
+        const boundaries = await getRegionBoundaries(controller.signal)
         const element = container.current
         if (controller.signal.aborted || !element) return
         const map = new Map({
