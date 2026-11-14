@@ -125,7 +125,7 @@ export function PhotoTile({
           type="button"
           className={styles.surface}
           onClick={onSelect}
-          aria-pressed={isSelected}
+          aria-pressed={hasMore ? undefined : isSelected}
           aria-label={stateText ? `${alt}, ${stateText}` : alt}
         >
           {content}

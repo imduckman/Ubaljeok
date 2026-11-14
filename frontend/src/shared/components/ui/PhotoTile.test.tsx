@@ -20,6 +20,16 @@ describe('PhotoTile', () => {
     expect(onSelect).toHaveBeenCalledTimes(1)
   })
 
+  it('클릭 가능한 더 보기 타일은 일반 버튼이다', () => {
+    const onSelect = vi.fn()
+    render(<PhotoTile src="/sample.jpg" alt="행궁동 사진" moreCount={30} onSelect={onSelect} />)
+
+    const button = screen.getByRole('button', { name: '행궁동 사진, 사진 30장 더 있음' })
+    expect(button.hasAttribute('aria-pressed')).toBe(false)
+    fireEvent.click(button)
+    expect(onSelect).toHaveBeenCalledTimes(1)
+  })
+
   it('지우기 버튼은 선택 동작과 따로 동작한다', () => {
     const onSelect = vi.fn()
     const onRemove = vi.fn()
