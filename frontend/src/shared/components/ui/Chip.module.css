@@ -1,0 +1,17 @@
+.chip {
+  display: inline-block;
+  border-radius: var(--radius-chip);
+  padding: 2px 7px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pink {
+  background: var(--us-light);
+  color: var(--us-dark);
+}
+
+.gold {
+  background: var(--coin-light);
+  color: var(--coin-text);
+}

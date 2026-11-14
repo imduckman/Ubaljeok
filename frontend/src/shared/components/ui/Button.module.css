@@ -1,0 +1,76 @@
+.button {
+  height: 56px;
+  padding: 0 20px;
+  border: none;
+  border-radius: var(--radius-button);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(3px);
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--them);
+  outline-offset: 2px;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.primary {
+  height: 58px;
+  background: var(--us);
+  color: var(--paper);
+  font-size: 19px;
+  font-weight: 800;
+  box-shadow: var(--press) var(--us-dark);
+}
+
+.primary:active:not(:disabled) {
+  box-shadow: 0 1px 0 var(--us-dark);
+}
+
+.secondary {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--line-strong);
+  box-shadow: var(--press) var(--line-strong);
+}
+
+.secondary:active:not(:disabled) {
+  box-shadow: 0 1px 0 var(--line-strong);
+}
+
+.dark {
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: var(--press) #3a3b44;
+}
+
+.dark:active:not(:disabled) {
+  box-shadow: 0 1px 0 #3a3b44;
+}
+
+.kakao {
+  background: #fee500;
+  color: #191600;
+  font-weight: 800;
+  box-shadow: var(--press) #d9c200;
+}
