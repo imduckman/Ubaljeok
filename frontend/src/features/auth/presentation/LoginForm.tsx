@@ -54,7 +54,7 @@ export function LoginForm() {
           label="아이디"
           name="loginId"
           autoComplete="username"
-          placeholder="footprint_22"
+          placeholder="footprint22"
           value={loginId}
           onChange={(event) => setLoginId(event.target.value.trim())}
         />

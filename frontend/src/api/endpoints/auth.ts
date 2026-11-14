@@ -1,15 +1,31 @@
 import { request, USE_MOCK_API } from '../client'
 import { mockServer } from '../mock/mockServer'
+import { ApiError } from '../../shared/types/api'
 import type { LoginRequest, SignupRequest, User } from '../../features/auth/domain/User'
 
-export function login(body: LoginRequest): Promise<User> {
-  if (USE_MOCK_API) return mockServer.login(body)
-  return request<User>('/auth/login', { method: 'POST', body: JSON.stringify(body) })
+interface UserResponse {
+  user: { id: number; loginId: string; nickname: string }
 }
 
-export function signup(body: SignupRequest): Promise<User> {
-  if (USE_MOCK_API) return mockServer.signup(body)
-  return request<User>('/auth/signup', { method: 'POST', body: JSON.stringify(body) })
+function toUser({ user }: UserResponse): User {
+  return { userId: user.id, loginId: user.loginId, nickname: user.nickname }
+}
+
+export async function login({ loginId, password }: LoginRequest): Promise<User> {
+  if (USE_MOCK_API) return mockServer.login({ loginId, password })
+  return toUser(await request<UserResponse>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ loginId, password }),
+  }))
+}
+
+export async function signup({ loginId, password, nickname }: SignupRequest): Promise<User> {
+  if (USE_MOCK_API) return mockServer.signup({ loginId, password, nickname })
+  await request<UserResponse>('/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify({ loginId, password, nickname }),
+  })
+  return login({ loginId, password })
 }
 
 export function logout(): Promise<void> {
@@ -17,12 +33,12 @@ export function logout(): Promise<void> {
   return request<void>('/auth/logout', { method: 'POST' })
 }
 
-/** 로그인 상태면 사용자, 아니면 null */
 export async function getMe(): Promise<User | null> {
   if (USE_MOCK_API) return mockServer.getMe()
   try {
-    return await request<User>('/auth/me')
-  } catch {
-    return null
+    return toUser(await request<UserResponse>('/auth/me'))
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) return null
+    throw error
   }
 }

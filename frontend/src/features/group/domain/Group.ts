@@ -11,9 +11,9 @@ export interface Group {
   name: string
   inviteCode: string
   members: GroupMember[]
-  walletBalance: number
-  visitedRegionCount: number
-  createdAt: string
+  walletBalance?: number
+  visitedRegionCount?: number
+  createdAt?: string
 }
 
 export interface CreateGroupRequest {

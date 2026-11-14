@@ -14,6 +14,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((currentUser) => {
         if (isActive) setUser(currentUser)
       })
+      .catch(() => {
+        if (isActive) setUser(null)
+      })
       .finally(() => {
         if (isActive) setIsCheckingSession(false)
       })
