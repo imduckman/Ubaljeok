@@ -10,7 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.db import get_sessionmaker
-from app.services.regions import SOURCE_VERSION, load_boundaries, split_name
+from app.regions import SOURCE_VERSION, load_boundaries
 
 _UPSERT = text(
     """
@@ -33,14 +33,14 @@ def load_regions(db: Session) -> int:
     features = load_boundaries()["features"]
     for feature in features:
         props = feature["properties"]
-        name, sigungu = split_name(props["adm_nm"])
         db.execute(
             _UPSERT,
             {
                 "region_code": props["regionCode"],
                 "adm_cd": props["adm_cd"],
-                "name": name,
-                "sigungu_name": sigungu,
+                # 목록 API(app/regions.py)와 같은 규칙: 동 이름은 adm_nm의 마지막 단어, 시군구는 sggnm
+                "name": props["adm_nm"].rsplit(" ", 1)[-1],
+                "sigungu_name": props["sggnm"],
                 "data_version": SOURCE_VERSION,
                 "geometry": json.dumps(feature["geometry"]),
             },

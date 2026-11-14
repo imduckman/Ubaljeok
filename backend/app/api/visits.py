@@ -19,7 +19,7 @@ from app.schemas.photo import (
     VisitPhotoOut,
 )
 from app.services.photo_processing import KST
-from app.services.regions import SOURCE_VERSION
+from app.regions import SOURCE_VERSION
 
 router = APIRouter(prefix="/visits", tags=["visits"])
 

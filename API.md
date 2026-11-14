@@ -201,36 +201,29 @@
 경계 데이터: [vuski/admdongkor](https://github.com/vuski/admdongkor) `ver20261001`의 수원시 행정동 **44개**
 (원자료 통계청 SGIS, 공공누리 제1유형 / 가공 데이터 CC BY 4.0). 출처·버전 규칙은 `backend/app/data/README.md`.
 `regionCode`는 **행정안전부 10자리 행정동 코드**(`adm_cd2`)를 문자열로 쓴다 (RULES.md 공통 API 규칙).
+구현: `backend/app/regions.py` (#9)
 
-### ★ `GET /api/regions`
-지원 지역의 행정동 목록 (위치 없는 사진의 **수동 동네 선택**용). 로그인 없이 호출 가능.
+### ★ 🔒 `GET /api/regions`
+지원 지역의 행정동 목록 (위치 없는 사진의 **수동 동네 선택**용)
 
 **Response 200**
 ```json
 {
-  "dataset": {
-    "sourceVersion": "ver20261001",
-    "status": "active",
-    "sourceUrl": "https://github.com/vuski/admdongkor/tree/master/ver20261001",
-    "licenseUrl": "https://github.com/vuski/admdongkor/blob/master/LICENSE-DATA",
-    "attribution": "원자료: 통계청 SGIS (공공누리 제1유형). 가공: vuski/admdongkor (CC BY 4.0)."
-  },
+  "dataVersion": "ver20261001",
   "regions": [
-    {
-      "regionCode": "4111156000",
-      "name": "파장동",
-      "sigunguName": "수원시장안구",
-      "fullName": "경기도 수원시장안구 파장동"
-    }
+    { "name": "파장동", "regionCode": "4111156000", "sigunguName": "수원시장안구" }
   ]
 }
 ```
+- 지도 경계는 아래 GeoJSON API에서 제공하며 목록과 같은 `dataVersion`을 사용합니다.
 
-### `GET /api/regions/geojson`
-지도 표시용 경계 (`application/geo+json`). 로그인 없이 호출 가능.
-- GeoJSON `FeatureCollection` + 최상위 `dataset`(위와 같은 모양)
-- 각 `feature.properties`: 원본 필드(`adm_nm`, `adm_cd`, `adm_cd2`, `sgg`, `sggnm` …) + **`regionCode`**
-- 위치 판정은 서버 DB(PostGIS)에 적재한 **같은 파일·같은 버전**의 원본 경계로 한다
+### 🔒 `GET /api/regions/geojson`
+
+MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `application/geo+json`의 `FeatureCollection`이며, 각 `properties.regionCode`는 목록의 공통 코드와 일치합니다. 최상위 `dataVersion`과 `dataset`에 경계 버전 및 출처·라이선스 정보를 제공합니다. 두 조회 모두 로그인 세션이 없으면 `401 UNAUTHORIZED`를 반환합니다.
+
+### 서버 위치 판정용 경계 적재
+- 같은 GeoJSON 파일을 `python -m app.scripts.load_regions`로 PostGIS `regions` 테이블에 적재한다 (재실행 안전)
+- 사진 업로드의 동네 판정은 이 DB 경계로 한다 (`ST_Covers`)
 
 ---
 
