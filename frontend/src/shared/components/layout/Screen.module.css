@@ -1,0 +1,40 @@
+.screen {
+  min-height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.page {
+  background: var(--page);
+}
+
+.paper {
+  background: var(--paper);
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 64px 20px 24px;
+}
+
+.centered {
+  justify-content: center;
+  padding: 44px 24px;
+}
+
+.footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px 34px;
+  background: inherit;
+}
+
+.footer > * {
+  flex: 1;
+}
