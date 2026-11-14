@@ -1,0 +1,147 @@
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -40px 0 24px;
+  min-height: 44px;
+}
+
+.textButton {
+  min-height: 44px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.backLink {
+  width: 44px;
+  height: 44px;
+  margin-left: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+}
+
+.status {
+  margin: 40px 0 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.mapPlaceholder {
+  flex: 1;
+  margin-top: 20px;
+  border-radius: var(--radius-card);
+  background: var(--soft);
+  border: 2px dashed #dcdde3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 24px;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.pillRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.groupPill {
+  height: 46px;
+  padding: 0 14px 0 6px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--paper);
+  box-shadow: var(--press) var(--line-strong);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.groupPillAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  background: var(--us);
+  color: var(--paper);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.walletPill {
+  position: relative;
+  margin-left: auto;
+  height: 46px;
+  padding: 0 26px 0 12px;
+  border: 2.5px solid #a0806e;
+  border-radius: 14px;
+  background: #fdf6ef;
+  box-shadow: 0 3px 0 #a08b7e;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #4a3328;
+}
+
+.walletSnap {
+  position: absolute;
+  right: -2.5px;
+  top: 50%;
+  width: 16px;
+  height: 18px;
+  transform: translateY(-50%);
+  border-radius: 6px 0 0 6px;
+  background: #a0806e;
+}
+
+.walletSnap::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ecd7c2;
+}
+
+.walletDot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--coin);
+  box-shadow: var(--press-small) var(--coin-dark);
+}
+
+.walletIcon {
+  display: flex;
+  color: var(--coin-text);
+}

@@ -1,0 +1,36 @@
+.track {
+  width: 33.333%;
+  min-width: 128px;
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #ecedf1;
+}
+
+.segment {
+  height: 44px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.segment:focus-visible {
+  outline: 3px solid var(--them);
+  outline-offset: 1px;
+}
+
+.active {
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 800;
+  box-shadow: 0 2px 0 #d5d7de;
+  cursor: default;
+}
