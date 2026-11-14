@@ -71,6 +71,10 @@ docker compose -f compose.yaml up --build
 ```
 - 공개 포트: nginx만 외부 공개 (`http://localhost:${NGINX_PORT:-80}`)
 - 내부 연결: `nginx -> api`, `api/worker -> db/redis`
+- DB 테이블 생성·갱신(처음 실행하거나 마이그레이션이 추가됐을 때):
+  ```bash
+  docker compose exec api alembic upgrade head
+  ```
 
 ## 기본 검증 명령
 ```bash
