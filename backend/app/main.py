@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api import auth, groups
+from app.api import auth, groups, photos, visits
 from app.core.errors import register_error_handlers
 from app.regions import router as regions_router
 
@@ -13,6 +13,8 @@ register_error_handlers(app)
 app.include_router(auth.router)
 app.include_router(groups.router)
 app.include_router(regions_router)
+app.include_router(photos.router)
+app.include_router(visits.router)
 
 
 @app.get("/health")

@@ -38,8 +38,7 @@ class MemberOut(ApiModel):
 class GroupOut(ApiModel):
     """그룹 생성·참여·목록·상세가 모두 같은 모양으로 응답한다(프론트 카드에 바로 사용).
 
-    방문 동네 수(visitedRegionCount)는 방문 기능, 지갑 잔액(walletBalance)은
-    지갑 기능이 생기면 추가한다.
+    지갑 잔액(walletBalance)은 지갑 기능(3주차)이 생기면 추가한다.
     """
 
     id: int
@@ -48,6 +47,7 @@ class GroupOut(ApiModel):
     my_role: Role
     member_count: int
     members: list[MemberOut]
+    visited_region_count: int  # 이 그룹이 한 번이라도 방문한 동네 수
 
 
 class GroupResponse(ApiModel):

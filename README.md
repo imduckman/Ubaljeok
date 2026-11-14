@@ -71,10 +71,12 @@ docker compose -f compose.yaml up --build
 ```
 - 공개 포트: nginx만 외부 공개 (`http://localhost:${NGINX_PORT:-80}`)
 - 내부 연결: `nginx -> api`, `api/worker -> db/redis`
-- DB 테이블 생성·갱신(처음 실행하거나 마이그레이션이 추가됐을 때):
+- DB 테이블 생성·갱신(처음 실행하거나 마이그레이션이 추가됐을 때)과 수원시 행정동 경계 적재:
   ```bash
   docker compose exec api alembic upgrade head
+  docker compose exec api python -m app.scripts.load_regions
   ```
+  경계 적재는 여러 번 실행해도 안전합니다(있으면 갱신).
 
 ## 기본 검증 명령
 ```bash

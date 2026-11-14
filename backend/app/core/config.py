@@ -10,6 +10,8 @@ class Settings:
     session_cookie_name: str
     session_ttl_days: int
     cookie_secure: bool
+    media_root: str
+    max_upload_mb: int
 
 
 def _load_settings() -> Settings:
@@ -19,6 +21,9 @@ def _load_settings() -> Settings:
         session_ttl_days=int(os.getenv("SESSION_TTL_DAYS", "7")),
         # 공개 배포(HTTPS)에서는 COOKIE_SECURE=true 로 설정
         cookie_secure=os.getenv("COOKIE_SECURE", "false").lower() == "true",
+        # 정제한 사진·영상 저장 위치 (Compose에서는 media_data 볼륨 /app/media)
+        media_root=os.getenv("MEDIA_ROOT", "./media"),
+        max_upload_mb=int(os.getenv("MAX_UPLOAD_MB", "15")),
     )
 
 
