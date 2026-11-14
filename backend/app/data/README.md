@@ -6,7 +6,7 @@
 
 ## 버전 변경
 
-- 파일명과 API의 `dataset.source_version`에 원본 버전을 기록합니다. 프로젝트에서 데이터에 적용한 변경은 Git 이력으로 추적합니다.
+- 파일명과 API의 `dataset.sourceVersion`에 원본 버전을 기록합니다. 프로젝트에서 데이터에 적용한 변경은 Git 이력으로 추적합니다.
 - 경계를 갱신할 때는 파일, `regions.py`의 `SOURCE_VERSION`, API 문서와 테스트를 같은 PR에서 갱신합니다. PR에 원본 출처와 바뀐 동·코드·경계를 기록해 지도·백엔드 담당자가 확인할 수 있게 합니다.
 
-프론트 Mock의 경계 fixture는 rontend/public/data/suwon-ver20261001.geojson입니다. 경계 버전을 갱신할 때 두 파일의 내용과 출처를 함께 확인합니다.
+프론트 Mock은 [경계 fixture](../../../frontend/public/data/suwon-ver20261001.geojson)를 사용합니다. 경계를 갱신할 때 로그인 후 GET /api/regions/geojson의 응답으로 fixture를 교체하고, 조회 경로와 테스트의 버전도 함께 갱신합니다.
