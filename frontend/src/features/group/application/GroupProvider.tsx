@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import * as groupApi from '../../../api/endpoints/groups'
 import { getErrorMessage } from '../../../shared/types/api'
 import { useAuth } from '../../auth/application/useAuth'
@@ -7,18 +7,18 @@ import { GroupContext, type GroupContextValue } from './groupContext'
 
 const CURRENT_GROUP_KEY = 'ubaljeok-current-group'
 
-function readSavedGroupId(): number | null {
+function readSavedGroupId(key: string): number | null {
   try {
-    const saved = localStorage.getItem(CURRENT_GROUP_KEY)
+    const saved = localStorage.getItem(key)
     return saved ? Number(saved) : null
   } catch {
     return null
   }
 }
 
-function saveGroupId(groupId: number) {
+function saveGroupId(key: string, groupId: number) {
   try {
-    localStorage.setItem(CURRENT_GROUP_KEY, String(groupId))
+    localStorage.setItem(key, String(groupId))
   } catch {
     // 저장 못 해도 이번 접속 동안은 선택이 유지된다.
   }
@@ -26,38 +26,57 @@ function saveGroupId(groupId: number) {
 
 export function GroupProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
-  const [groups, setGroups] = useState<Group[]>([])
-  const [currentGroupId, setCurrentGroupId] = useState<number | null>(readSavedGroupId)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [loadedUser, setLoadedUser] = useState<typeof user>(null)
-  const isLoading = user !== null && (loadedUser !== user || isRefreshing)
-  const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null)
+  return <GroupSession key={user?.userId ?? 'guest'} userId={user?.userId}>{children}</GroupSession>
+}
 
-  const refreshGroups = useCallback(async () => {
-    setIsRefreshing(true)
-    setLoadErrorMessage(null)
-    try {
-      setGroups(await groupApi.listMyGroups())
-    } catch (error) {
-      setLoadErrorMessage(getErrorMessage(error, '그룹을 불러오지 못했어요.'))
-    } finally {
-      setLoadedUser(user)
-      setIsRefreshing(false)
-    }
-  }, [user])
+function GroupSession({ children, userId }: { children: ReactNode; userId?: number }) {
+  const storageKey = `${CURRENT_GROUP_KEY}:${userId ?? 'guest'}`
+  const [groups, setGroups] = useState<Group[]>([])
+  const [currentGroupId, setCurrentGroupId] = useState(() => readSavedGroupId(storageKey))
+  const [isLoading, setIsLoading] = useState(userId !== undefined)
+  const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null)
+  const pendingLoad = useRef<AbortController | null>(null)
+
+  const loadGroups = useCallback(async () => {
+    if (userId === undefined) return
+
+    pendingLoad.current?.abort()
+    const controller = new AbortController()
+    pendingLoad.current = controller
+
+    return groupApi.listMyGroups().then(
+      (result) => {
+        if (!controller.signal.aborted) {
+          setGroups(result)
+          setLoadErrorMessage(null)
+        }
+      },
+      (error: unknown) => {
+        if (!controller.signal.aborted) {
+          setLoadErrorMessage(getErrorMessage(error, '그룹을 불러오지 못했어요.'))
+        }
+      },
+    ).finally(() => {
+      if (!controller.signal.aborted) setIsLoading(false)
+    })
+  }, [userId])
 
   useEffect(() => {
-    if (user) {
-      void refreshGroups()
-    } else {
-      setGroups([])
-    }
-  }, [user, refreshGroups])
+    void loadGroups()
+    return () => pendingLoad.current?.abort()
+  }, [loadGroups])
+
+  const refreshGroups = useCallback(async () => {
+    if (userId === undefined) return
+    setIsLoading(true)
+    setLoadErrorMessage(null)
+    await loadGroups()
+  }, [loadGroups, userId])
 
   const selectGroup = useCallback((groupId: number) => {
     setCurrentGroupId(groupId)
-    saveGroupId(groupId)
-  }, [])
+    saveGroupId(storageKey, groupId)
+  }, [storageKey])
 
   const createGroup = useCallback(
     async (body: CreateGroupRequest) => {
