@@ -16,7 +16,7 @@
 - **서버 세션 + HttpOnly 쿠키** (JWT 사용 안 함)
 - 로그인 성공 시 `Set-Cookie: session=<토큰>; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800`(7일) 발급
 - 프론트는 토큰을 따로 저장하지 않고, 같은 도메인으로 요청하면 쿠키가 자동 전송됨
-- Vite 개발 서버에서 연결할 때는 `/api` 요청을 `http://localhost`(nginx)로 proxy 설정
+- Docker의 Nginx 이미지는 실제 API 모드로 빌드합니다. Vite 개발 서버에서는 `VITE_USE_MOCK=false`로 실행하면 `/api`를 기본 `http://localhost`의 Nginx로 프록시합니다. Nginx 주소가 다르면 `UBALJEOK_API_PROXY_TARGET`으로 지정합니다.
 - 🔒 표시 API는 로그인 필요. 쿠키가 없거나 만료되면 `401 UNAUTHORIZED`
 
 ### 그룹 권한
