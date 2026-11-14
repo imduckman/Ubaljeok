@@ -1,0 +1,228 @@
+.tile {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+/* 사진이 담기는 면. 바닥 그림자로 타일 두께를 준다 */
+.surface {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-tile);
+  background: var(--soft);
+  box-shadow: var(--press-small) var(--line-strong);
+  overflow: hidden;
+  font-family: inherit;
+  color: inherit;
+}
+
+.clickable .surface {
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.clickable .surface:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--line-strong);
+}
+
+.surface:focus-visible {
+  outline: 3px solid var(--them);
+  outline-offset: 2px;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--ink-3);
+}
+
+/* 선택됨: 안쪽 핑크 테두리 + 순서 번호 */
+.selected .surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--us);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.selected .surface {
+  box-shadow: var(--press-small) var(--us-dark);
+}
+
+.order {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--us);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: var(--press-small) var(--us-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+.cover {
+  position: absolute;
+  left: 6px;
+  bottom: 8px;
+  padding: 2px 7px;
+  border-radius: var(--radius-chip);
+  background: var(--coin-light);
+  color: var(--coin-text);
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: var(--press-small) var(--coin);
+}
+
+/* 올리는 중: 사진을 흐리게 하고 아래에 작은 막대 */
+.uploading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.miniTrack {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(14, 15, 20, 0.14);
+  overflow: hidden;
+}
+
+.miniFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: 999px;
+  background: var(--us);
+  transition: width 0.35s ease;
+}
+
+.miniIndeterminate {
+  width: 40%;
+  animation: slide 1.2s ease-in-out infinite;
+}
+
+@keyframes slide {
+  from {
+    left: -40%;
+  }
+  to {
+    left: 100%;
+  }
+}
+
+/* 실패: 빨간 테두리 + 느낌표 */
+.errorTile .surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--error);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.errorTile .image {
+  filter: grayscale(0.5) brightness(0.92);
+}
+
+.errorBadge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--error);
+  color: var(--paper);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+/* "+30" 더 보기 */
+.more {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(14, 15, 20, 0.5);
+  color: var(--paper);
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 지우기 버튼: 보이는 크기는 26px, 누르는 범위는 44px */
+.remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid var(--paper);
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.remove::before {
+  content: '';
+  position: absolute;
+  inset: -9px;
+}
+
+.remove:focus-visible {
+  outline: 3px solid var(--them);
+  outline-offset: 2px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .miniIndeterminate {
+    left: 0;
+    width: 100%;
+    opacity: 0.5;
+    animation: none;
+  }
+}
