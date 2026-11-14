@@ -2,7 +2,7 @@
 
 `suwon-ver20261001.geojson`은 수원시 행정동 44개를 담은 파일입니다. 경계 좌표, 이름, 두 행정동 코드가 [admdongkor ver20261001 원본](https://github.com/vuski/admdongkor/blob/master/ver20261001/HangJeongDong_ver20261001.geojson)의 수원시 항목과 일치함을 확인했습니다.
 
-원자료는 [통계청 통계지리정보서비스(SGIS)](https://sgis.kostat.go.kr)의 행정동 경계이며 [공공누리 제1유형](https://www.kogl.or.kr/info/licenseType1.do)을 따릅니다. 가공 데이터 제공자는 [vuski/admdongkor](https://github.com/vuski/admdongkor)이며 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)으로 배포합니다. 출처 표시 조건은 [LICENSE-DATA](https://github.com/vuski/admdongkor/blob/master/LICENSE-DATA)를 참고합니다.
+원자료는 [통계청 통계지리정보서비스(SGIS)](https://sgis.kostat.go.kr)의 행정동 경계이며 [공공누리 제1유형](https://www.kogl.or.kr/info/licenseType1.do)을 따릅니다. 가공 데이터 제공자는 [vuski/admdongkor](https://github.com/vuski/admdongkor)이며 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)으로 배포합니다. 출처 표시 조건은 [배포 데이터의 라이선스 전문](../../../frontend/public/data/LICENSE-DATA.txt)를 참고합니다.
 
 ## 버전 변경
 
