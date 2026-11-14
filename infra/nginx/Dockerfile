@@ -3,7 +3,7 @@ WORKDIR /frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend ./
-RUN npm run build
+RUN VITE_USE_MOCK=false npm run build
 
 FROM nginx:1.27-alpine
 COPY infra/nginx/default.conf /etc/nginx/conf.d/default.conf

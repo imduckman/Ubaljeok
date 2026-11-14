@@ -34,16 +34,16 @@ export function MapPage() {
             <path d="M6 9l6 6 6-6" />
           </svg>
         </Link>
-        <div className={styles.walletPill} aria-label={`그룹 지갑 ${currentGroup.walletBalance}코인`}>
+        {currentGroup.walletBalance !== undefined && <div className={styles.walletPill} aria-label={`그룹 지갑 ${currentGroup.walletBalance}코인`}>
           <span className={styles.walletDot} aria-hidden="true" />
           {currentGroup.walletBalance}
           <span className={styles.walletSnap} aria-hidden="true" />
-        </div>
+        </div>}
       </div>
       <div className={styles.mapPlaceholder}>
         <Character size={44} />
         <p style={{ margin: 0 }}>지도가 여기에 들어와요</p>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>동네 {currentGroup.visitedRegionCount}칸 방문</p>
+        {currentGroup.visitedRegionCount !== undefined && <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>동네 {currentGroup.visitedRegionCount}칸 방문</p>}
       </div>
     </Screen>
   )

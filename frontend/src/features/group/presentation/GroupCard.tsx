@@ -42,13 +42,13 @@ export function GroupCard({ group, index, isCurrent, isSelected, onSelect, onEnt
               {isCurrent ? <Chip>지금 그룹</Chip> : null}
             </div>
             <p className={styles.meta}>
-              멤버 {group.members.length}명 · 동네 {group.visitedRegionCount}칸
+              멤버 {group.members.length}명{group.visitedRegionCount !== undefined && ` · 동네 ${group.visitedRegionCount}칸`}
             </p>
           </div>
-          <span className={styles.coin} aria-label={`코인 ${group.walletBalance}`}>
+          {group.walletBalance !== undefined && <span className={styles.coin} aria-label={`코인 ${group.walletBalance}`}>
             <span className={styles.coinDot} aria-hidden="true" />
             {group.walletBalance}
-          </span>
+          </span>}
         </div>
       </button>
 

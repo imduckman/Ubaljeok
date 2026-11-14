@@ -1,8 +1,9 @@
 import { validateLoginId, validateNickname, validatePassword } from './validation'
 
 describe('회원가입 입력 검사', () => {
-  it('아이디는 영문 소문자, 숫자, _로 4–20자만 허용한다', () => {
-    expect(validateLoginId('footprint_22')).toBeNull()
+  it('아이디는 영문 소문자, 숫자로 4–30자만 허용한다', () => {
+    expect(validateLoginId('footprint22')).toBeNull()
+    expect(validateLoginId('footprint_22')).not.toBeNull()
     expect(validateLoginId('abc')).not.toBeNull()
     expect(validateLoginId('Footprint')).not.toBeNull()
     expect(validateLoginId('')).not.toBeNull()

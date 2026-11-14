@@ -167,7 +167,7 @@ export const mockServer = {
     const database = load()
     const user = requireSession(database)
     const group = database.groups.find((candidate) => candidate.inviteCode === inviteCode)
-    if (!group) throw new ApiError(404, 'INVITE_CODE_NOT_FOUND', '코드를 찾을 수 없어요. 다시 확인해 주세요.')
+    if (!group) throw new ApiError(404, 'INVITE_NOT_FOUND', '코드를 찾을 수 없어요. 다시 확인해 주세요.')
     if (group.members.some((member) => member.userId === user.userId)) {
       throw new ApiError(409, 'ALREADY_MEMBER', '이미 들어가 있는 그룹이에요.')
     }
