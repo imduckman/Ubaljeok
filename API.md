@@ -208,7 +208,7 @@
   ]
 }
 ```
-- `regionCode`는 ERD의 `regions.adm_code`와 같은 값 (행정동 코드 종류는 지도 담당과 확정 예정)
+- `regionCode`는 행정안전부 행정동 코드 `adm_cd2`의 10자리 문자열이며, ERD의 `regions.adm_code`와 같은 값
 - 지도 경계(GeoJSON)는 이 API가 아니라 프론트 정적 파일로 제공 (`dataVersion` 일치)
 
 ---
@@ -333,4 +333,3 @@
 ## 팀 논의가 필요한 점
 1. **group 전달 방식**: 사진·방문 API는 지금 `groupId`를 body/쿼리로 받음. `/api/groups/{groupId}/photos`처럼 주소에 넣을지 프론트와 결정
 2. **사진 용량 상한**: 예) 15MB
-3. **regionCode 형식**: 지도 담당(희재)과 행정동 코드 종류(`adm_cd` 8자리 / `adm_cd2` 10자리) 확정
