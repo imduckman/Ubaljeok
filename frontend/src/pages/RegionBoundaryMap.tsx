@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { Map, setWorkerUrl } from 'maplibre-gl'
-import type { GeoJSONSource } from 'maplibre-gl'
+import { Map, Popup, setWorkerUrl } from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { request } from '../api/client'
+import { suwonRegion } from './mapRegions'
+import styles from './RegionBoundaryMap.module.css'
 
 setWorkerUrl(workerUrl)
 
-export function RegionBoundaryMap() {
+const visitLabels = ['1회', '2회', '3–4회', '5–9회', '10회+']
+
+export function RegionBoundaryMap({ region = suwonRegion }: { region?: typeof suwonRegion }) {
+  const popupRef = useRef<Popup | null>(null)
+  const [selection, setSelection] = useState<string | null>(null)
   const container = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
 
@@ -17,12 +21,12 @@ export function RegionBoundaryMap() {
     const mapInstance = { current: null as Map | null }
     const load = async () => {
       try {
-        const boundaries = await request<Exclude<Parameters<GeoJSONSource['setData']>[0], string>>('/regions/geojson', { signal: controller.signal })
+        const boundaries = await region.loadBoundaries(controller.signal)
         const element = container.current
         if (controller.signal.aborted || !element) return
         const map = new Map({
           container: element,
-          bounds: [126.9, 37.17, 127.13, 37.37],
+          bounds: region.bounds,
           fitBoundsOptions: { padding: 20 },
           style: {
             version: 8,
@@ -45,6 +49,21 @@ export function RegionBoundaryMap() {
           },
         })
         mapInstance.current = map
+        const popup = new Popup({
+          className: styles.selectedLabel,
+          closeButton: false,
+          closeOnClick: false,
+          offset: 8,
+        })
+        popupRef.current = popup
+        map.on('click', 'regions', (event) => {
+          const fullName = event.features?.[0]?.properties?.adm_nm
+          if (typeof fullName !== 'string') return
+          const name = fullName.trim().split(/\s+/).at(-1)
+          if (!name) return
+          setSelection(name)
+          popup.setLngLat(event.lngLat).setText(name).addTo(map)
+        })
         map.on('error', () => setStatus('error'))
         map.once('load', () => setStatus('ready'))
       } catch {
@@ -54,13 +73,39 @@ export function RegionBoundaryMap() {
     void load()
     return () => {
       controller.abort()
+      popupRef.current?.remove()
+      popupRef.current = null
       mapInstance.current?.remove()
     }
-  }, [])
+  }, [region])
 
   return (
-    <section aria-label="수원시 행정동 지도">
-      <div ref={container} style={{ width: '100%', height: 420 }} />
+    <section aria-label={`${region.name} 행정동 지도`}>
+      <div className={styles.mapFrame}>
+        <div ref={container} className={styles.canvas} />
+        {status === 'ready' && (
+          <aside className={styles.legend} aria-label="방문 횟수 범례">
+            <strong>방문 횟수</strong>
+            <ul>
+              {visitLabels.map((label, index) => (
+                <li key={label}>
+                  <span aria-hidden="true" style={{ backgroundColor: `var(--visit-${index + 1})` }} />
+                  {label}
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
+      </div>
+      {selection && (
+        <section className={styles.sheet} aria-label="선택한 동네">
+          <h3>{selection}</h3>
+          <button type="button" onClick={() => {
+            popupRef.current?.remove()
+            setSelection(null)
+          }}>닫기</button>
+        </section>
+      )}
       {status === 'loading' && <p role="status">동네 경계를 불러오는 중…</p>}
       {status === 'error' && <p role="alert">동네 경계를 불러오지 못했어요.</p>}
     </section>
