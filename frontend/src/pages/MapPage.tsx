@@ -1,6 +1,6 @@
 import { Link, Navigate } from 'react-router'
 import { Screen } from '../shared/components/layout/Screen'
-import { Character } from '../shared/components/ui/Character'
+import { RegionBoundaryMap } from './RegionBoundaryMap'
 import { useGroups } from '../features/group/application/useGroups'
 import { ScreenSwitch } from './ScreenSwitch'
 import styles from './Pages.module.css'
@@ -40,11 +40,7 @@ export function MapPage() {
           <span className={styles.walletSnap} aria-hidden="true" />
         </div>}
       </div>
-      <div className={styles.mapPlaceholder}>
-        <Character size={44} />
-        <p style={{ margin: 0 }}>지도가 여기에 들어와요</p>
-        {currentGroup.visitedRegionCount !== undefined && <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>동네 {currentGroup.visitedRegionCount}칸 방문</p>}
-      </div>
+      <RegionBoundaryMap />
     </Screen>
   )
 }

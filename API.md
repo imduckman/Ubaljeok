@@ -194,7 +194,7 @@
 
 ---
 
-## 동네(행정동) — 초안
+## 동네(행정동)
 
 ### ★ 🔒 `GET /api/regions`
 지원 지역의 행정동 목록 (위치 없는 사진의 **수동 동네 선택**용)
@@ -209,7 +209,11 @@
 }
 ```
 - `regionCode`는 행정안전부 행정동 코드 `adm_cd2`의 10자리 문자열이며, ERD의 `regions.adm_code`와 같은 값
-- 지도 경계(GeoJSON)는 이 API가 아니라 프론트 정적 파일로 제공 (`dataVersion` 일치)
+- 지도 경계는 아래 GeoJSON API에서 제공하며 목록과 같은 `dataVersion`을 사용합니다.
+
+### 🔒 `GET /api/regions/geojson`
+
+MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `application/geo+json`의 `FeatureCollection`이며, 각 `properties.regionCode`는 목록의 공통 코드와 일치합니다. 최상위 `dataVersion`과 `dataset`에 경계 버전 및 출처·라이선스 정보를 제공합니다. 두 조회 모두 로그인 세션이 없으면 `401 UNAUTHORIZED`를 반환합니다.
 
 ---
 
