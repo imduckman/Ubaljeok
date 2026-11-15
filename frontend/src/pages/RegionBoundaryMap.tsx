@@ -4,16 +4,25 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { suwonRegion } from './mapRegions'
 import styles from './RegionBoundaryMap.module.css'
+import type { ExpressionSpecification } from 'maplibre-gl'
+import { getVisitMap, type VisitMapResponse } from '../api/endpoints/visits'
 
 setWorkerUrl(workerUrl)
 
 const visitLabels = ['1회', '2회', '3–4회', '5–9회', '10회+']
 
-export function RegionBoundaryMap({ region = suwonRegion }: { region?: typeof suwonRegion }) {
+export function RegionBoundaryMap({
+  region = suwonRegion,
+  groupId,
+}: {
+  region?: typeof suwonRegion
+  groupId: number
+}) {
   const popupRef = useRef<Popup | null>(null)
   const [selection, setSelection] = useState<string | null>(null)
   const container = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [visitLoadFailed, setVisitLoadFailed] = useState(false)
 
   useEffect(() => {
     if (!container.current) return
@@ -21,9 +30,37 @@ export function RegionBoundaryMap({ region = suwonRegion }: { region?: typeof su
     const mapInstance = { current: null as Map | null }
     const load = async () => {
       try {
-        const boundaries = await region.loadBoundaries(controller.signal)
-        const element = container.current
-        if (controller.signal.aborted || !element) return
+        const [boundaries, visits] = await Promise.all([
+  region.loadBoundaries(controller.signal),
+  getVisitMap(groupId, controller.signal).catch(() => null),
+])
+
+const element = container.current
+if (controller.signal.aborted || !element) return
+
+setVisitLoadFailed(visits === null)
+
+const defaultColor = '#ecedf1'
+const theme = getComputedStyle(element)
+const visitedRegions: VisitMapResponse['regions'] = visits?.regions ?? []
+const [firstVisit, ...remainingVisits] = visitedRegions
+
+const colorForLevel = (level: number) =>
+  theme.getPropertyValue(`--visit-${level}`).trim() || defaultColor
+
+const fillColor: string | ExpressionSpecification = firstVisit
+  ? [
+      'match',
+      ['get', 'regionCode'],
+      firstVisit.regionCode,
+      colorForLevel(firstVisit.level),
+      ...remainingVisits.flatMap(({ regionCode, level }) => [
+        regionCode,
+        colorForLevel(level),
+      ]),
+      defaultColor,
+    ]
+  : defaultColor
         const map = new Map({
           container: element,
           bounds: region.bounds,
@@ -38,7 +75,7 @@ export function RegionBoundaryMap({ region = suwonRegion }: { region?: typeof su
               },
             },
             layers: [
-              { id: 'regions', type: 'fill', source: 'regions', paint: { 'fill-color': '#ecedf1' } },
+              { id: 'regions', type: 'fill', source: 'regions', paint: { 'fill-color': fillColor } },
               { id: 'region-depth', type: 'line', source: 'regions', paint: {
                 'line-color': '#d5d7de', 'line-width': 4, 'line-translate': [0, 4],
               } },
@@ -77,7 +114,7 @@ export function RegionBoundaryMap({ region = suwonRegion }: { region?: typeof su
       popupRef.current = null
       mapInstance.current?.remove()
     }
-  }, [region])
+  }, [region, groupId])
 
   return (
     <section aria-label={`${region.name} 행정동 지도`}>
@@ -108,6 +145,7 @@ export function RegionBoundaryMap({ region = suwonRegion }: { region?: typeof su
       )}
       {status === 'loading' && <p role="status">동네 경계를 불러오는 중…</p>}
       {status === 'error' && <p role="alert">동네 경계를 불러오지 못했어요.</p>}
+      {status === 'ready' && visitLoadFailed && <p role="status">방문 기록을 불러오지 못했어요.</p>}
     </section>
   )
 }

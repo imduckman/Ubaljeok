@@ -40,7 +40,7 @@ export function MapPage() {
           <span className={styles.walletSnap} aria-hidden="true" />
         </div>}
       </div>
-      <RegionBoundaryMap />
+      <RegionBoundaryMap key={currentGroup.groupId} groupId={currentGroup.groupId} />
     </Screen>
   )
 }
