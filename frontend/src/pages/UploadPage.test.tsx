@@ -36,7 +36,7 @@ describe('UploadPage', () => {
   it('처음에는 사진 고르기 안내를 보여준다', () => {
     renderPage()
     expect(screen.getByText('오늘 함께 걸은 사진을 골라주세요')).toBeTruthy()
-    expect(screen.getByText('밥친구들에 올려요')).toBeTruthy()
+    expect(screen.getByRole('link', { name: '밥친구들에 올려요, 그룹 바꾸기' }).getAttribute('href')).toBe('/groups')
   })
 
   it('JPEG가 아닌 사진은 빼고 올릴 장수를 센다', () => {

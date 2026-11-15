@@ -59,12 +59,16 @@ export function UploadPage() {
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </Link>
-        <span className={styles.groupChip}>
-          <span className={styles.groupAvatar} aria-hidden="true">
+        {/* 지도 화면의 그룹 버튼과 같은 모양. 누르면 그룹 목록에서 올릴 그룹을 바꾼다 */}
+        <Link to="/groups" className={pageStyles.groupPill} aria-label={`${currentGroup.name}에 올려요, 그룹 바꾸기`}>
+          <span className={pageStyles.groupPillAvatar} aria-hidden="true">
             {currentGroup.name.charAt(0)}
           </span>
           {currentGroup.name}에 올려요
-        </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </Link>
       </div>
 
       {phase === 'finished' ? (
