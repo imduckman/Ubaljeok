@@ -6,7 +6,7 @@ import { ProgressBar } from '../shared/components/ui/ProgressBar'
 import { useGroups } from '../features/group/application/useGroups'
 import { usePhotoUpload } from '../features/photo/application/usePhotoUpload'
 import { PhotoPicker } from '../features/photo/presentation/PhotoPicker'
-import { RegionPickerSheet } from '../features/photo/presentation/RegionPickerSheet'
+import { RegionPickerSheet } from '../shared/components/ui/RegionPickerSheet'
 import { UploadResultList } from '../features/photo/presentation/UploadResultList'
 import pageStyles from './Pages.module.css'
 import styles from './UploadPage.module.css'
@@ -123,7 +123,7 @@ export function UploadPage() {
 
       <RegionPickerSheet
         isOpen={Boolean(regionTarget)}
-        photoName={regionTarget?.file.name}
+        description={regionTarget ? `${regionTarget.file.name} · 직접 고른 동네는 지도에 남고, 코인은 받을 수 없어요.` : undefined}
         onClose={() => setRegionTargetId(null)}
         onPick={(region) => {
           if (regionTargetId) upload.assignRegion(regionTargetId, region.regionCode)

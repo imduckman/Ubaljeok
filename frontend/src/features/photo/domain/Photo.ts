@@ -43,11 +43,6 @@ export interface UploadPhotoRequest {
   regionCode?: string
 }
 
-export interface Region {
-  regionCode: string
-  name: string
-  sigunguName: string
-}
 
 /** 올리기 전에 브라우저에서 바로 걸러낼 수 있는 문제 */
 export function validatePhotoFile(file: File): string | null {

@@ -7,18 +7,11 @@
  * 그 외에는 이름에 따라 수원시 동네 하나로 판정한다.
  */
 import { ApiError } from '../../shared/types/api'
-import type { Region, UploadPhotoRequest, UploadPhotoResponse } from '../../features/photo/domain/Photo'
+import type { UploadPhotoRequest, UploadPhotoResponse } from '../../features/photo/domain/Photo'
+import { loadMockRegions } from './mockRegions'
 
 const NETWORK_DELAY_MS = 700
 
-const FALLBACK_REGIONS: Region[] = [
-  { regionCode: '4111156000', name: '파장동', sigunguName: '수원시장안구' },
-  { regionCode: '4111560000', name: '행궁동', sigunguName: '수원시팔달구' },
-  { regionCode: '4111759000', name: '영통1동', sigunguName: '수원시영통구' },
-  { regionCode: '4111761000', name: '광교1동', sigunguName: '수원시영통구' },
-]
-
-let regionsCache: Region[] | null = null
 const uploadedKeys = new Set<string>()
 const failedOnce = new Set<string>()
 let nextPhotoId = 500
@@ -39,32 +32,7 @@ function todayKst() {
   return now.toISOString().slice(0, 10)
 }
 
-async function loadRegions(): Promise<Region[]> {
-  if (regionsCache) return regionsCache
-  try {
-    const response = await fetch(`${import.meta.env.BASE_URL}data/suwon-ver20261001.geojson`)
-    const data = (await response.json()) as {
-      features: { properties: { regionCode: string; adm_nm: string; sggnm: string } }[]
-    }
-    regionsCache = data.features
-      .map(({ properties }) => ({
-        regionCode: properties.regionCode,
-        name: properties.adm_nm.split(' ').at(-1) ?? properties.adm_nm,
-        sigunguName: properties.sggnm,
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
-  } catch {
-    regionsCache = FALLBACK_REGIONS
-  }
-  return regionsCache
-}
-
 export const mockPhotoServer = {
-  async listRegions(): Promise<Region[]> {
-    await delay(250)
-    return loadRegions()
-  },
-
   async uploadPhoto({ groupId, file, regionCode }: UploadPhotoRequest): Promise<UploadPhotoResponse> {
     await delay()
     const name = file.name.toLowerCase()
@@ -76,7 +44,7 @@ export const mockPhotoServer = {
     }
     if (uploadedKeys.has(key)) throw new ApiError(409, 'DUPLICATE_PHOTO', '이미 올린 사진이에요.')
 
-    const regions = await loadRegions()
+    const regions = await loadMockRegions()
     const hasGps = !name.includes('nogps')
     if (!hasGps && !regionCode) {
       throw new ApiError(422, 'REGION_REQUIRED', '사진에 위치 정보가 없어요. 동네를 골라주세요.')
