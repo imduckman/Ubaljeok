@@ -33,8 +33,9 @@ function todayKst() {
 }
 
 export const mockPhotoServer = {
-  async uploadPhoto({ groupId, file, regionCode }: UploadPhotoRequest): Promise<UploadPhotoResponse> {
+  async uploadPhoto({ groupId, file, regionCode }: UploadPhotoRequest, signal?: AbortSignal): Promise<UploadPhotoResponse> {
     await delay()
+    signal?.throwIfAborted()
     const name = file.name.toLowerCase()
     const key = `${groupId}:${file.name}:${file.size}`
 
@@ -45,6 +46,7 @@ export const mockPhotoServer = {
     if (uploadedKeys.has(key)) throw new ApiError(409, 'DUPLICATE_PHOTO', '이미 올린 사진이에요.')
 
     const regions = await loadMockRegions()
+    signal?.throwIfAborted()
     const hasGps = !name.includes('nogps')
     if (!hasGps && !regionCode) {
       throw new ApiError(422, 'REGION_REQUIRED', '사진에 위치 정보가 없어요. 동네를 골라주세요.')

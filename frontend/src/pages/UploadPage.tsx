@@ -14,9 +14,6 @@ import styles from './UploadPage.module.css'
 /** 사진 올리기: 고르기 → 올리기(진행) → 결과(동네·코인 대상·동네 고르기·다시 올리기) */
 export function UploadPage() {
   const { currentGroup, isLoading } = useGroups()
-  const navigate = useNavigate()
-  const upload = usePhotoUpload(currentGroup?.groupId ?? null)
-  const [regionTargetId, setRegionTargetId] = useState<string | null>(null)
 
   if (!currentGroup) {
     if (isLoading) {
@@ -30,6 +27,14 @@ export function UploadPage() {
     }
     return <Navigate to="/groups" replace />
   }
+
+  return <GroupPhotoUpload key={currentGroup.groupId} groupId={currentGroup.groupId} groupName={currentGroup.name} />
+}
+
+function GroupPhotoUpload({ groupId, groupName }: { groupId: number; groupName: string }) {
+  const navigate = useNavigate()
+  const upload = usePhotoUpload(groupId)
+  const [regionTargetId, setRegionTargetId] = useState<string | null>(null)
 
   const { items, phase, notice, progress, readyCount, invalidCount } = upload
   const doneCount = items.filter((item) => item.status === 'done').length
@@ -60,11 +65,11 @@ export function UploadPage() {
           </svg>
         </Link>
         {/* 지도 화면의 그룹 버튼과 같은 모양. 누르면 그룹 목록에서 올릴 그룹을 바꾼다 */}
-        <Link to="/groups" className={pageStyles.groupPill} aria-label={`${currentGroup.name}에 올려요, 그룹 바꾸기`}>
+        <Link to="/groups" className={pageStyles.groupPill} aria-label={`${groupName}에 올려요, 그룹 바꾸기`}>
           <span className={pageStyles.groupPillAvatar} aria-hidden="true">
-            {currentGroup.name.charAt(0)}
+            {groupName.charAt(0)}
           </span>
-          {currentGroup.name}에 올려요
+          {groupName}에 올려요
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
             <path d="M6 9l6 6 6-6" />
           </svg>

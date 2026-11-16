@@ -18,6 +18,7 @@ export interface UploadItem {
   message?: string
   /** failed일 때 다시 올리기를 보여줄지 */
   retryable?: boolean
+  regionCode?: string
   result?: UploadPhotoResponse
 }
 
@@ -57,8 +58,14 @@ export function usePhotoUpload(groupId: number | null) {
     itemsRef.current = items
   }, [items])
 
-  // 화면을 떠나면 미리보기 주소를 정리한다
-  useEffect(() => () => itemsRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl)), [])
+  const requestsRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    requestsRef.current = new AbortController()
+    return () => {
+      requestsRef.current?.abort()
+      itemsRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl))
+    }
+  }, [])
 
   const patch = useCallback((id: string, changes: Partial<UploadItem>) => {
     setItems((current) => current.map((item) => (item.id === id ? { ...item, ...changes } : item)))
@@ -95,14 +102,14 @@ export function usePhotoUpload(groupId: number | null) {
   }, [])
 
   const uploadOne = useCallback(
-    async (item: UploadItem, regionCode?: string) => {
-      if (groupId === null) return
-      patch(item.id, { status: 'uploading', message: undefined })
+    async (item: UploadItem, signal: AbortSignal, regionCode = item.regionCode) => {
+      if (groupId === null || signal.aborted) return
+      patch(item.id, { status: 'uploading', message: undefined, regionCode })
       try {
-        const result = await uploadPhoto({ groupId, file: item.file, regionCode })
-        patch(item.id, { status: 'done', result })
+        const result = await uploadPhoto({ groupId, file: item.file, regionCode }, signal)
+        if (!signal.aborted) patch(item.id, { status: 'done', result })
       } catch (error) {
-        patch(item.id, toFailedState(error))
+        if (!signal.aborted) patch(item.id, toFailedState(error))
       }
     },
     [groupId, patch],
@@ -111,11 +118,13 @@ export function usePhotoUpload(groupId: number | null) {
   /** 준비된 사진을 한 장씩 차례로 올린다 */
   const startUpload = useCallback(async () => {
     const queue = itemsRef.current.filter((item) => item.status === 'ready')
-    if (queue.length === 0 || groupId === null) return
+    const signal = requestsRef.current?.signal
+    if (queue.length === 0 || groupId === null || !signal || signal.aborted) return
     setPhase('uploading')
     setProgress({ done: 0, total: queue.length })
     for (const [index, item] of queue.entries()) {
-      await uploadOne(item)
+      await uploadOne(item, signal)
+      if (signal.aborted) return
       setProgress({ done: index + 1, total: queue.length })
     }
     setPhase('finished')
@@ -123,15 +132,19 @@ export function usePhotoUpload(groupId: number | null) {
 
   const retryItem = useCallback((id: string) => {
     const item = itemsRef.current.find((candidate) => candidate.id === id)
-    if (item) void uploadOne(item)
+    const signal = requestsRef.current?.signal
+    if (item?.status === 'failed' && item.retryable && signal) void uploadOne(item, signal)
   }, [uploadOne])
 
   const assignRegion = useCallback((id: string, regionCode: string) => {
     const item = itemsRef.current.find((candidate) => candidate.id === id)
-    if (item) void uploadOne(item, regionCode)
+    const signal = requestsRef.current?.signal
+    if (item?.status === 'needsRegion' && signal) void uploadOne(item, signal, regionCode)
   }, [uploadOne])
 
   const reset = useCallback(() => {
+    requestsRef.current?.abort()
+    requestsRef.current = new AbortController()
     itemsRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl))
     setItems([])
     setNotice(null)
