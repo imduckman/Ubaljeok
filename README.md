@@ -25,7 +25,7 @@ ubaljeok/
 ├── infra/
 │   └── nginx/                 # Nginx 정적 서빙 + API 프록시
 ├── .github/
-│   ├── workflows/ci.yml       # 기본 품질 검사
+│   ├── workflows/             # 테스트·빌드 및 품질 검사
 │   └── PULL_REQUEST_TEMPLATE.md
 ├── API.md                     # API 계약 초안
 ├── RULES.md                   # Git 협업 규칙

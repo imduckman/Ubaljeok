@@ -82,6 +82,6 @@
 | GitHub Actions | 다양한 검사를 수행하는 Workflow 최소 5개와 실제 실행 결과 |
 
 - Compose와 Kubernetes는 평가표의 대안 조건이며, 이 프로젝트는 Docker Compose를 사용합니다.
-- 현재 `ci.yml`은 **Workflow 1개, Job 2개**입니다. 최종 개수 조건은 아직 충족하지 않았습니다.
-- 향후 `quality.yml`, `test-web.yml`, `test-api.yml`, `test-worker.yml`, `compose-smoke.yml`, `e2e.yml`, `security.yml`로 확장할 계획입니다. 이름만 만들거나 같은 검사를 복제해 개수를 채우지 않습니다.
+- `ci.yml`은 프론트엔드 테스트·빌드와 백엔드 pytest를, `quality.yml`은 프론트엔드 lint를 실행합니다.
+- 최종 워크플로 구성은 `quality.yml`, `test-web.yml`, `test-api.yml`, `test-worker.yml`, `compose-smoke.yml`, `e2e.yml`, `security.yml`입니다. 각 워크플로는 담당 영역의 실제 검사를 실행합니다.
 - 유료 AI API는 CI에서 호출하지 않습니다. 영상 생성 검사는 Mock Provider와 테스트 데이터를 사용하도록 구성합니다.
