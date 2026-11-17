@@ -88,6 +88,52 @@
   flex-shrink: 0;
 }
 
+.mapFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mapTools {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.settingsButton {
+  height: 46px;
+  padding: 0 12px 0 16px;
+  gap: 6px;
+  flex: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--paper);
+  box-shadow: var(--press) var(--line-strong);
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.settingsButton:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--line-strong);
+}
+
+.notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-tile);
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .groupPillName {
   min-width: 0;
   overflow: hidden;

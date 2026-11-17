@@ -1,15 +1,17 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useId, type ReactNode } from 'react'
 import styles from './BottomSheet.module.css'
 
 interface BottomSheetProps {
   isOpen: boolean
-  title: string
+  /** 문자열이 보통이고, 긴 이름만 줄이고 싶을 때는 요소를 넣을 수 있다. */
+  title: ReactNode
   description?: string
   onClose: () => void
   children: ReactNode
 }
 
 export function BottomSheet({ isOpen, title, description, onClose, children }: BottomSheetProps) {
+  const titleId = useId()
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -27,13 +29,15 @@ export function BottomSheet({ isOpen, title, description, onClose, children }: B
         className={styles.sheet}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby={titleId}
         onClick={(event) => event.stopPropagation()}
       >
         <span className={styles.handle} aria-hidden="true" />
         <div className={styles.header}>
-          <div>
-            <h2 className={styles.title}>{title}</h2>
+          <div className={styles.headerText}>
+            <h2 id={titleId} className={styles.title}>
+              {title}
+            </h2>
             {description ? <p className={styles.description}>{description}</p> : null}
           </div>
           <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">

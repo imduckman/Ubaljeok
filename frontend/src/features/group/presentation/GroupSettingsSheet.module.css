@@ -1,0 +1,134 @@
+.nameClip {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.members {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.member {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.memberAvatar {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--us-light);
+  color: #9e1240;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.memberName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.me {
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.inviteRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-tile);
+  background: var(--soft);
+}
+
+.inviteLabel {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.inviteCode {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.copyButton {
+  margin-left: auto;
+  height: 44px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+
+.message {
+  margin: -4px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.dangerZone {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  border-top: 1.5px solid var(--line);
+  padding-top: 8px;
+}
+
+.dangerText {
+  min-height: 44px;
+  padding: 0 12px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--error-text);
+  cursor: pointer;
+}
+
+.error {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--error-text);
+}
+
+.confirmRow {
+  display: flex;
+  gap: 10px;
+}
+
+.confirmRow > * {
+  flex: 1;
+}
+
+.confirmRow > .dangerButton {
+  flex: 2;
+  background: var(--error);
+  box-shadow: var(--press) #a8231a;
+}
+
+.confirmRow > .dangerButton:active:not(:disabled) {
+  box-shadow: 0 1px 0 #a8231a;
+}
