@@ -29,16 +29,16 @@ export function MapPage() {
           <span className={styles.groupPillAvatar} aria-hidden="true">
             {currentGroup.name.charAt(0)}
           </span>
-          {currentGroup.name}
+          <span className={styles.groupPillName}>{currentGroup.name}</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A5C6B" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
             <path d="M6 9l6 6 6-6" />
           </svg>
         </Link>
-        {currentGroup.walletBalance !== undefined && <div className={styles.walletPill} aria-label={`그룹 지갑 ${currentGroup.walletBalance}코인`}>
+        <div className={styles.walletPill} aria-label={`그룹 지갑 ${currentGroup.walletBalance ?? 0}코인`}>
           <span className={styles.walletDot} aria-hidden="true" />
-          {currentGroup.walletBalance}
+          {currentGroup.walletBalance ?? 0}
           <span className={styles.walletSnap} aria-hidden="true" />
-        </div>}
+        </div>
       </div>
       <RegionBoundaryMap />
     </Screen>

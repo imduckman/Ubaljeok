@@ -80,7 +80,6 @@ export function GroupsPage() {
                 <GroupCard
                   group={group}
                   index={index}
-                  isCurrent={group.groupId === currentGroup?.groupId}
                   isSelected={group.groupId === expandedGroupId}
                   onSelect={() => setSelectedGroupId(group.groupId)}
                   onEnter={() => handleEnterGroup(group.groupId)}

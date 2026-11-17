@@ -40,12 +40,14 @@ export function GroupInvitePage() {
         </Button>
       }
     >
-      <Chip>그룹 생성 완료</Chip>
-      <h1 className={groupStyles.title} style={{ marginTop: 10 }}>
-        {group.name} 판이 열렸어요.
-        <br />
-        친구를 불러볼까요?
-      </h1>
+      <div>
+        <Chip>그룹 생성 완료</Chip>
+        <h1 className={groupStyles.title} style={{ marginTop: 10 }}>
+          <span className={groupStyles.titleName}>{group.name}</span> 판이 열렸어요.
+          <br />
+          친구를 불러볼까요?
+        </h1>
+      </div>
 
       <InviteShareCard group={group} />
 

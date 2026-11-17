@@ -26,7 +26,7 @@ export interface JoinGroupRequest {
 
 export const MAX_GROUP_MEMBERS = 6
 export const INVITE_CODE_LENGTH = 6
-export const GROUP_NAME_MAX_LENGTH = 12
+export const GROUP_NAME_MAX_LENGTH = 30
 
 export function validateGroupName(name: string): string | null {
   const trimmed = name.trim()
