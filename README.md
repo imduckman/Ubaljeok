@@ -94,4 +94,5 @@ pytest
 ## 문서
 - 협업 규칙: [`RULES.md`](./RULES.md)
 - 팀원·AI 작업 가이드: [`Guide.md`](./Guide.md)
-- API 초안: [`API.md`](./API.md)
+- 현재 API 계약: [`API.md`](./API.md)
+- MVP 개발·검수 가이드: [`docs/MVP-IMPLEMENTATION.md`](./docs/MVP-IMPLEMENTATION.md)
