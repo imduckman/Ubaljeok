@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router'
 import { Screen } from '../shared/components/layout/Screen'
-import { RegionBoundaryMap } from './RegionBoundaryMap'
+import { Button } from '../shared/components/ui/Button'
+import { RegionBoundaryMap, type SelectedRegion } from './RegionBoundaryMap'
 import { useAuth } from '../features/auth/application/useAuth'
 import { useGroups } from '../features/group/application/useGroups'
 import { GroupSettingsSheet } from '../features/group/presentation/GroupSettingsSheet'
+import { RegionExplorer } from '../features/visit/presentation/RegionExplorer'
 import { ScreenSwitch } from './ScreenSwitch'
 import styles from './Pages.module.css'
 
@@ -14,6 +16,7 @@ export function MapPage() {
   const { currentGroup, isLoading, leaveGroup, deleteGroup } = useGroups()
   const navigate = useNavigate()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [selectedRegion, setSelectedRegion] = useState<SelectedRegion | null>(null)
 
   if (!currentGroup) {
     if (isLoading) {
@@ -30,7 +33,23 @@ export function MapPage() {
 
   const footer = (
     <div className={styles.mapFooter}>
+      {selectedRegion ? (
+        <RegionExplorer
+          key={`${currentGroup.groupId}:${selectedRegion.regionCode}`}
+          groupId={currentGroup.groupId}
+          regionCode={selectedRegion.regionCode}
+          regionName={selectedRegion.name}
+          onClose={() => setSelectedRegion(null)}
+        />
+      ) : null}
       <div className={styles.mapTools}>
+        <Button variant="primary" className={styles.uploadButton} onClick={() => navigate('/upload')}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+            <circle cx="12" cy="13" r="3.5" />
+          </svg>
+          사진 올리기
+        </Button>
         <button type="button" className={styles.settingsButton} onClick={() => setIsSettingsOpen(true)}>
           설정
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -61,7 +80,7 @@ export function MapPage() {
           <span className={styles.walletSnap} aria-hidden="true" />
         </div>
       </div>
-      <RegionBoundaryMap />
+      <RegionBoundaryMap onSelectRegion={setSelectedRegion} />
 
       <GroupSettingsSheet
         key={currentGroup.groupId}

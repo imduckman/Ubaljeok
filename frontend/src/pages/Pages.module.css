@@ -96,7 +96,15 @@
 
 .mapTools {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mapTools > .uploadButton {
+  height: 46px;
+  padding: 0 16px;
+  font-size: 15px;
 }
 
 .settingsButton {

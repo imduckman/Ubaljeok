@@ -14,9 +14,17 @@
   background: var(--paper);
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   padding: 12px 20px 34px;
+  /* 내용이 길면 시트 안에서 스크롤한다 */
+  max-height: 85dvh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* 시트가 스크롤될 때 안의 내용이 눌려 줄어들지 않게 한다 */
+.sheet > * {
+  flex-shrink: 0;
 }
 
 .handle {
