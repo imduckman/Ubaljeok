@@ -7,6 +7,7 @@ import { ApiError } from '../../shared/types/api'
 import type { LoginRequest, SignupRequest, User } from '../../features/auth/domain/User'
 import type { CreateGroupRequest, Group, JoinGroupRequest } from '../../features/group/domain/Group'
 import { MAX_GROUP_MEMBERS, isGroupOwner, removeMember } from '../../features/group/domain/Group'
+import type { Wallet } from '../../features/wallet/domain/Wallet'
 
 interface StoredUser extends User {
   password: string
@@ -209,6 +210,25 @@ export const mockServer = {
     }
     database.groups = database.groups.filter((candidate) => candidate.groupId !== groupId)
     save(database)
+  },
+
+  /** 그룹 지갑. 가짜 서버는 거래 내역을 아직 만들지 않는다. */
+  async getWallet(groupId: number): Promise<Wallet> {
+    await delay()
+    const database = load()
+    const user = requireSession(database)
+    const group = findMyGroup(database, groupId, user.userId)
+    return { balance: group.walletBalance ?? 0, transactions: [], nextCursor: null }
+  },
+
+  /** 개발용: 코인 연출 확인을 위해 지갑에 코인을 더하고 새 잔액을 돌려준다. */
+  addCoinsForDemo(groupId: number, amount: number): number {
+    const database = load()
+    const group = database.groups.find((candidate) => candidate.groupId === groupId)
+    if (!group) return 0
+    group.walletBalance = Math.max((group.walletBalance ?? 0) + amount, 0)
+    save(database)
+    return group.walletBalance
   },
 
   /** 개발용: 가짜 데이터를 처음 상태로 되돌린다. */

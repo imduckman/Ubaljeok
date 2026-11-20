@@ -1,0 +1,148 @@
+.gain {
+  font-weight: 800;
+  color: var(--coin-gain);
+}
+
+/* 코인 획득 카드 (화면 시안 "6. 코인 획득 순간") */
+.reward {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.coinStage {
+  position: relative;
+  width: 76px;
+  height: 82px;
+}
+
+.burst {
+  position: absolute;
+  left: 50%;
+  top: 38px;
+  width: 0;
+  height: 0;
+}
+
+.burstCoin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  background: var(--coin);
+  box-shadow: 0 2px 0 var(--coin-dark);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.4);
+  animation: coin-burst 1.4s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+/* 가운데에서 튀어 나갔다가 살짝 떨어지며 사라진다 */
+@keyframes coin-burst {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 36px)) scale(0.8);
+  }
+}
+
+.bigCoin {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--coin);
+  box-shadow: 0 6px 0 var(--coin-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: coin-pop 0.35s ease-out;
+}
+
+@keyframes coin-pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+.bigCoinRing {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3.5px solid var(--paper);
+  opacity: 0.9;
+}
+
+.rewardLabel {
+  margin: 18px 0 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--us-dark);
+}
+
+.rewardAmount {
+  margin: 4px 0 0;
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  line-height: 1;
+}
+
+.walletChip {
+  margin: 14px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: var(--coin-light);
+  box-shadow: 0 3px 0 #f5dc93;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--coin-text);
+}
+
+.walletChip strong {
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.rewardNote {
+  margin: 12px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.rewardActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.rewardActions > :first-child {
+  flex: 1;
+}
+
+.rewardActions > :last-child {
+  flex: 2;
+}
+
+/* 휴대폰의 "동작 줄이기" 설정을 켠 사람에게는 움직임을 보여주지 않는다 */
+@media (prefers-reduced-motion: reduce) {
+  .burst {
+    display: none;
+  }
+
+  .bigCoin {
+    animation: none;
+  }
+}
