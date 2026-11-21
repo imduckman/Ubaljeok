@@ -13,22 +13,29 @@ export type RegionDetailState =
  * 그룹이나 동네가 바뀌면 이전 요청은 취소해서 늦게 온 응답이 섞이지 않게 한다.
  */
 export function useRegionDetail(groupId: number, regionCode: string) {
-  const [state, setState] = useState<RegionDetailState>({ status: 'loading' })
+  const [result, setResult] = useState<{
+    groupId: number
+    regionCode: string
+    attempt: number
+    state: RegionDetailState
+  } | null>(null)
   const [attempt, setAttempt] = useState(0)
+  // 현재 요청과 일치하는 결과만 표시해 그룹 전환·재시도 때 이전 결과가 섞이지 않게 한다.
+  const state: RegionDetailState = result?.groupId === groupId
+    && result.regionCode === regionCode && result.attempt === attempt
+    ? result.state
+    : { status: 'loading' }
 
   useEffect(() => {
     const controller = new AbortController()
-    setState({ status: 'loading' })
     Promise.all([getRegionDetail(groupId, regionCode, controller.signal), getRegionOwnership(groupId, regionCode)]).then(
-      ([detail, ownership]) => {
-        if (!controller.signal.aborted) setState({ status: 'ready', detail, ownership })
-      },
-      (error: unknown) => {
-        if (!controller.signal.aborted) {
-          setState({ status: 'error', message: getErrorMessage(error, '동네 정보를 불러오지 못했어요.') })
-        }
-      },
-    )
+      ([detail, ownership]): RegionDetailState => ({ status: 'ready', detail, ownership }),
+      (error: unknown): RegionDetailState => ({
+        status: 'error', message: getErrorMessage(error, '동네 정보를 불러오지 못했어요.'),
+      }),
+    ).then((state) => {
+      if (!controller.signal.aborted) setResult({ groupId, regionCode, attempt, state })
+    })
     return () => controller.abort()
   }, [groupId, regionCode, attempt])
 

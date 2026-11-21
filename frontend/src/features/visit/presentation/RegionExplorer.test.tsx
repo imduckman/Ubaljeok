@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../../shared/types/api'
 import type { RegionDetail } from '../domain/RegionDetail'
 import { RegionExplorer } from './RegionExplorer'
+import { useRegionDetail } from '../application/useRegionDetail'
 
 vi.mock('../../../api/endpoints/visits', () => ({
   getRegionDetail: vi.fn(),
@@ -36,6 +37,30 @@ afterEach(() => {
 })
 
 describe('RegionExplorer', () => {
+  it('그룹·동네가 바뀌면 새로 로딩하고 이전 요청의 늦은 응답은 무시한다', async () => {
+    let resolvePrevious!: (detail: RegionDetail) => void
+    detailApi.mockReturnValueOnce(new Promise((resolve) => { resolvePrevious = resolve }))
+    detailApi.mockResolvedValueOnce(visited)
+    ownershipApi.mockResolvedValue({ status: 'unowned' })
+    const { result, rerender } = renderHook(
+      ({ groupId, regionCode }) => useRegionDetail(groupId, regionCode),
+      { initialProps: { groupId: 101, regionCode: visited.region.regionCode } },
+    )
+    rerender({ groupId: 102, regionCode: visited.region.regionCode })
+    await waitFor(() => expect(result.current.state.status).toBe('ready'))
+    await act(async () => resolvePrevious({ ...visited, visitCount: 99 }))
+    expect(result.current.state).toMatchObject({ status: 'ready', detail: { visitCount: 3 } })
+
+    let resolveNext!: (detail: RegionDetail) => void
+    detailApi.mockReturnValueOnce(new Promise((resolve) => { resolveNext = resolve }))
+    rerender({ groupId: 102, regionCode: '4111156000' })
+    expect(result.current.state.status).toBe('loading')
+    await act(async () => resolveNext({
+      ...visited, region: { regionCode: '4111156000', name: '파장동' },
+    }))
+    expect(result.current.state).toMatchObject({ status: 'ready', detail: { region: { name: '파장동' } } })
+  })
+
   it('먼저 대표 카드만 보여주고, 누르면 세부 시트를 펼친다', async () => {
     detailApi.mockResolvedValue(visited)
     ownershipApi.mockResolvedValue({ status: 'ours', level: 'landmark' })
