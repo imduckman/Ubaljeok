@@ -13,6 +13,7 @@ export interface SettlementAnnouncement {
 export interface WalletContextValue {
   /** 그룹별로 알고 있는 최신 잔액 */
   balances: Record<number, number>
+  loadStates: Record<number, { isLoading: boolean; errorMessage: string | null }>
   /** 방금 바뀐 양. 지갑에 "(+100)"처럼 잠깐 보여주고 지운다. */
   recentChanges: Record<number, number>
   /** 서버에서 지갑을 다시 불러온다. 실패하면 알고 있던 값을 그대로 둔다. */

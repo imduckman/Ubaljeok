@@ -19,14 +19,18 @@ export function MapPage() {
   const navigate = useNavigate()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState<SelectedRegion | null>(null)
+  const [lastFocusKey, setLastFocusKey] = useState<string | null>(null)
   const location = useLocation()
   useCoinDemo(currentGroup)
 
   // 코인 카드의 "동네 보러 가기"로 오면 그 동네의 대표 카드를 바로 연다.
   const focusRegion = (location.state as { focusRegion?: SelectedRegion } | null)?.focusRegion
+  if (focusRegion && lastFocusKey !== location.key) {
+    setLastFocusKey(location.key)
+    setSelectedRegion(focusRegion)
+  }
   useEffect(() => {
     if (!focusRegion) return
-    setSelectedRegion(focusRegion)
     navigate(location.pathname, { replace: true, state: null })
   }, [focusRegion, location.pathname, navigate])
 
@@ -90,7 +94,7 @@ export function MapPage() {
           key={currentGroup.groupId}
           groupId={currentGroup.groupId}
           groupName={currentGroup.name}
-          fallbackBalance={currentGroup.walletBalance ?? 0}
+          fallbackBalance={currentGroup.walletBalance}
         />
       </div>
       <RegionBoundaryMap onSelectRegion={setSelectedRegion} />

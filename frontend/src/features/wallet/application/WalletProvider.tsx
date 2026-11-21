@@ -11,16 +11,28 @@ export const CHANGE_DISPLAY_MS = 4000
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast()
   const [balances, setBalances] = useState<Record<number, number>>({})
+  const [loadStates, setLoadStates] = useState<WalletContextValue['loadStates']>({})
   const [recentChanges, setRecentChanges] = useState<Record<number, number>>({})
   const [reward, setReward] = useState<CoinReward | null>(null)
   const changeTimers = useRef(new Map<number, number>())
+  const balanceVersions = useRef(new Map<number, number>())
 
   const loadWallet = useCallback(async (groupId: number) => {
+    const version = (balanceVersions.current.get(groupId) ?? 0) + 1
+    balanceVersions.current.set(groupId, version)
+    setLoadStates((previous) => ({ ...previous, [groupId]: { isLoading: true, errorMessage: null } }))
     try {
       const wallet = await getWallet(groupId)
+      // 조회 중 새 정산이나 조회가 시작됐으면 이전 응답은 잔액에 반영하지 않는다.
+      if (balanceVersions.current.get(groupId) !== version) return
       setBalances((previous) => ({ ...previous, [groupId]: wallet.balance }))
+      setLoadStates((previous) => ({ ...previous, [groupId]: { isLoading: false, errorMessage: null } }))
     } catch {
-      // 지갑 API가 아직 없거나 실패하면 알고 있던 잔액(또는 0)을 그대로 보여준다.
+      if (balanceVersions.current.get(groupId) !== version) return
+      setLoadStates((previous) => ({
+        ...previous,
+        [groupId]: { isLoading: false, errorMessage: '지갑을 불러오지 못했어요. 다시 시도해 주세요.' },
+      }))
     }
   }, [])
 
@@ -45,7 +57,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const announceSettlement = useCallback(
     ({ groupId, groupName, regionCode, regionName, settlement }: SettlementAnnouncement) => {
       if (!settlement) return
+      balanceVersions.current.set(groupId, (balanceVersions.current.get(groupId) ?? 0) + 1)
       setBalances((previous) => ({ ...previous, [groupId]: settlement.balance }))
+      setLoadStates((previous) => ({ ...previous, [groupId]: { isLoading: false, errorMessage: null } }))
       const change = settlement.reward - settlement.tollPaid
       if (change !== 0) showChange(groupId, change)
       describeSettlement(settlement, regionName).forEach((notice) => showToast({ tone: 'coin', ...notice }))
@@ -62,8 +76,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<WalletContextValue>(
-    () => ({ balances, recentChanges, loadWallet, announceSettlement }),
-    [balances, recentChanges, loadWallet, announceSettlement],
+    () => ({ balances, loadStates, recentChanges, loadWallet, announceSettlement }),
+    [balances, loadStates, recentChanges, loadWallet, announceSettlement],
   )
 
   return (
