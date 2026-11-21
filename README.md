@@ -71,12 +71,8 @@ docker compose -f compose.yaml up --build
 ```
 - 공개 포트: nginx만 외부 공개 (`http://localhost:${NGINX_PORT:-80}`)
 - 내부 연결: `nginx -> api`, `api/worker -> db/redis`
-- DB 테이블 생성·갱신(처음 실행하거나 마이그레이션이 추가됐을 때)과 수원시 행정동 경계 적재:
-  ```bash
-  docker compose exec api alembic upgrade head
-  docker compose exec api python -m app.scripts.load_regions
-  ```
-  경계 적재는 여러 번 실행해도 안전합니다(있으면 갱신).
+- 일회성 `migrate`가 DB 준비 후 Alembic 마이그레이션과 수원시 행정동 적재를 실행합니다. 성공하면 API가 시작됩니다. `docker compose ps -a migrate`에서 종료 코드 0을 확인할 수 있습니다.
+- 실패 원인은 `docker compose logs migrate`로 확인합니다. 원인을 해결한 뒤 `docker compose up --build`를 다시 실행합니다. 마이그레이션과 경계 적재는 재실행할 수 있습니다.
 
 ## 기본 검증 명령
 ```bash
