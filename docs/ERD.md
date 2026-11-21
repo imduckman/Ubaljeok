@@ -130,6 +130,11 @@ erDiagram
 
 [0001_auth_groups](../backend/alembic/versions/0001_auth_groups.py)는 users, sessions, groups, group_members를 생성한다. [0002_regions_visits_photos](../backend/alembic/versions/0002_regions_visits_photos.py)는 regions, visits, photos를 생성한다. 조회 API는 GeoJSON 경계 파일을 읽고 방문 판정은 같은 버전의 PostGIS 원본 경계를 사용한다.
 
+[0003_group_deletions](../backend/alembic/versions/0003_group_deletions.py)는 파일 정리 재시도용
+`group_deletions`를 생성한다. `group_id`는 PK이며 삭제할 그룹을 참조하는 FK는 두지 않는다.
+`requested_by`는 최초 요청자 ID, `file_paths`는 정리할 상대 경로 JSON 목록이다.
+그룹 데이터 삭제와 같은 트랜잭션에서 기록하고 파일 정리 완료 시 삭제한다.
+
 ### ★ users (구현) — 계정
 | 컬럼 | 타입 | 제약 | 설명 |
 | --- | --- | --- | --- |

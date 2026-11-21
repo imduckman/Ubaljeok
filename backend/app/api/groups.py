@@ -1,12 +1,17 @@
-from fastapi import APIRouter
-from sqlalchemy import func, select
+import shutil
+from pathlib import Path
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Response
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import CurrentUser, DbSession, GroupMembership
+from app.api.deps import CurrentUser, DbSession, GroupMembership, ensure_group_member
 from app.core.errors import AppError
 from app.core.security import new_invite_code
-from app.models import Group, GroupMember, User, Visit
+from app.models import Group, GroupDeletion, GroupMember, Photo, User, Visit
+from app.services import storage
 from app.schemas.group import (
     GroupCreateRequest,
     GroupJoinRequest,
@@ -21,6 +26,7 @@ router = APIRouter(prefix="/groups", tags=["groups"])
 
 MAX_GROUP_MEMBERS = 6  # 기획안 타깃: 3–6명 친구 그룹
 _MAX_INVITE_CODE_TRIES = 5
+MediaRoot = Annotated[Path, Depends(storage.get_media_root)]
 
 
 def _unused_invite_code(db: Session) -> str:
@@ -111,3 +117,86 @@ def list_my_groups(user: CurrentUser, db: DbSession) -> GroupListResponse:
 @router.get("/{group_id}", response_model=GroupResponse)
 def get_group(group_id: int, membership: GroupMembership, db: DbSession) -> GroupResponse:
     return GroupResponse(group=_group_out(db, membership.group, membership.role))
+
+
+def _finish_deletion(db: Session, group_id: int, media_root: Path) -> None:
+    pending = db.scalar(
+        select(GroupDeletion).where(GroupDeletion.group_id == group_id).with_for_update()
+    )
+    if pending is None:
+        return
+    try:
+        for relative in pending.file_paths:
+            storage.resolve(media_root, relative).unlink(missing_ok=True)
+        # DB에 없는 중간 저장 파일도 이 그룹의 사진 디렉터리에서 정리한다.
+        directory = media_root / "photos" / str(group_id)
+        storage.resolve(media_root, f"photos/{group_id}")
+        if directory.is_symlink():
+            directory.unlink()
+        elif directory.exists():
+            shutil.rmtree(directory)
+    except (OSError, ValueError):
+        db.rollback()
+        raise AppError(
+            503, "GROUP_DELETE_INCOMPLETE", "파일을 지우지 못했어요. 같은 삭제 작업을 다시 시도해 주세요."
+        ) from None
+    db.delete(pending)
+    db.commit()
+
+
+def _remove_group(db: Session, group: Group, user_id: int, media_root: Path) -> None:
+    paths = list(db.scalars(select(Photo.file_path).where(Photo.group_id == group.id)))
+    db.add(GroupDeletion(group_id=group.id, requested_by=user_id, file_paths=paths))
+    # 기존 DB CASCADE로 멤버·사진·방문을 삭제하고 파일 정리용 기록을 남긴다.
+    db.execute(delete(Group).where(Group.id == group.id))
+    db.commit()
+    _finish_deletion(db, group.id, media_root)
+
+
+def _locked_group_or_retry(
+    db: Session, group_id: int, user_id: int, media_root: Path
+) -> Group | None:
+    group = db.scalar(select(Group).where(Group.id == group_id).with_for_update())
+    if group is not None:
+        return group
+    pending = db.scalar(
+        select(GroupDeletion).where(GroupDeletion.group_id == group_id).with_for_update()
+    )
+    if pending is None or pending.requested_by != user_id:
+        raise AppError(404, "NOT_FOUND", "그룹을 찾을 수 없어요.")
+    _finish_deletion(db, group_id, media_root)
+    return None
+
+
+@router.delete("/{group_id}/members/me", status_code=204, response_class=Response)
+def leave_group(group_id: int, user: CurrentUser, db: DbSession, media_root: MediaRoot) -> Response:
+    group = _locked_group_or_retry(db, group_id, user.id, media_root)
+    if group is None:
+        return Response(status_code=204)
+    membership = ensure_group_member(db, group_id, user.id)
+    remaining = db.scalars(
+        select(GroupMember)
+        .where(GroupMember.group_id == group_id, GroupMember.user_id != user.id)
+        .order_by(GroupMember.joined_at, GroupMember.user_id)
+    ).all()
+    if not remaining:
+        _remove_group(db, group, user.id, media_root)
+    else:
+        if group.owner_id == user.id:
+            remaining[0].role = "owner"
+            group.owner_id = remaining[0].user_id
+        db.delete(membership)
+        db.commit()
+    return Response(status_code=204)
+
+
+@router.delete("/{group_id}", status_code=204, response_class=Response)
+def delete_group(group_id: int, user: CurrentUser, db: DbSession, media_root: MediaRoot) -> Response:
+    group = _locked_group_or_retry(db, group_id, user.id, media_root)
+    if group is None:
+        return Response(status_code=204)
+    ensure_group_member(db, group_id, user.id)
+    if group.owner_id != user.id:
+        raise AppError(403, "NOT_GROUP_OWNER", "그룹장만 그룹을 삭제할 수 있어요.")
+    _remove_group(db, group, user.id, media_root)
+    return Response(status_code=204)

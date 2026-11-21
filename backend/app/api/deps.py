@@ -35,9 +35,14 @@ def get_current_user(request: Request, db: DbSession) -> User:
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-def ensure_group_member(db: Session, group_id: int, user_id: int) -> GroupMember:
+def ensure_group_member(
+    db: Session, group_id: int, user_id: int, *, for_update: bool = False
+) -> GroupMember:
     """요청자가 그룹 멤버인지 확인한다. 그룹이 없으면 404, 멤버가 아니면 403."""
-    if db.get(Group, group_id) is None:
+    query = select(Group).where(Group.id == group_id)
+    if for_update:
+        query = query.with_for_update()
+    if db.scalar(query) is None:
         raise AppError(404, "NOT_FOUND", "그룹을 찾을 수 없어요.")
     membership = db.get(GroupMember, (group_id, user_id))
     if membership is None:
