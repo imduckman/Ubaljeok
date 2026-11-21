@@ -114,7 +114,8 @@ def upload_photo(
     file: Annotated[UploadFile, File()],
     region_code: Annotated[str | None, Form(alias="regionCode")] = None,
 ) -> PhotoUploadResponse:
-    ensure_group_member(db, group_id, user.id)
+    # 그룹 삭제·탈퇴와 업로드를 같은 그룹 행에서 직렬화한다.
+    ensure_group_member(db, group_id, user.id, for_update=True)
 
     raw = _read_limited(file)
     try:
