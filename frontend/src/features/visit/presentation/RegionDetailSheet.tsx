@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { BottomSheet } from '../../../shared/components/ui/BottomSheet'
 import { Button } from '../../../shared/components/ui/Button'
@@ -19,6 +20,7 @@ interface RegionDetailSheetProps {
 /** 대표 카드를 펼치면 올라오는 동네 세부 시트. 데이터는 useRegionDetail이 불러온다. */
 export function RegionDetailSheet({ state, regionName, onRetry, onClose }: RegionDetailSheetProps) {
   const navigate = useNavigate()
+  const [expandedVisitIds, setExpandedVisitIds] = useState<number[]>([])
   const title = state.status === 'ready' ? state.detail.region.name : regionName
   const description = state.status === 'ready' ? describeVisits(state.detail) : undefined
 
@@ -54,7 +56,8 @@ export function RegionDetailSheet({ state, regionName, onRetry, onClose }: Regio
           ) : (
             <ul className={styles.visits}>
               {state.detail.visits.map((visit) => {
-                const { shown, moreCount } = visiblePhotos(visit.photos)
+                const limit = expandedVisitIds.includes(visit.id) ? visit.photos.length : undefined
+                const { shown, moreCount } = visiblePhotos(visit.photos, limit)
                 const dateLabel = formatVisitDate(visit.visitDate)
                 return (
                   <li key={visit.id}>
@@ -71,6 +74,9 @@ export function RegionDetailSheet({ state, regionName, onRetry, onClose }: Regio
                           src={photo.fileUrl}
                           alt={`${dateLabel} ${title} 사진`}
                           moreCount={index === shown.length - 1 ? moreCount : undefined}
+                          onSelect={moreCount > 0 && index === shown.length - 1
+                            ? () => setExpandedVisitIds((previous) => [...previous, visit.id])
+                            : undefined}
                         />
                       ))}
                     </div>

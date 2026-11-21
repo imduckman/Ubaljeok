@@ -52,4 +52,45 @@ describe('RegionDetailSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: '다시 불러오기' }))
     expect(onRetry).toHaveBeenCalledTimes(1)
   })
+
+  it('더보기를 누른 방문의 사진만 모두 펼치고 사진 순서를 유지한다', () => {
+    const detail: RegionDetail = {
+      ...visited,
+      visits: visited.visits.map((visit, visitIndex) => ({
+        ...visit,
+        photos: Array.from({ length: visitIndex === 0 ? 12 : 10 }, (_, index) => {
+          const id = visit.id * 100 + index
+          return { id, takenAt: null, fileUrl: `/api/photos/${id}/file` }
+        }),
+      })),
+    }
+    renderSheet({ status: 'ready', detail, ownership: { status: 'unowned' } })
+
+    expect(screen.getAllByRole('img')).toHaveLength(16)
+    fireEvent.click(screen.getByRole('button', { name: /11월 16일.*사진 5장 더 있음/ }))
+    expect(screen.getAllByRole('img')).toHaveLength(20)
+    expect(screen.queryByRole('button', { name: /11월 16일.*더 있음/ })).toBeNull()
+    expect(screen.getByRole('button', { name: /11월 12일.*사진 3장 더 있음/ })).toBeTruthy()
+    expect(screen.getAllByRole('img').slice(0, 12).map((image) => image.getAttribute('src')))
+      .toEqual(detail.visits[0].photos.map((photo) => photo.fileUrl))
+
+    fireEvent.click(screen.getByRole('button', { name: /11월 12일.*사진 3장 더 있음/ }))
+    expect(screen.getAllByRole('img')).toHaveLength(22)
+  })
+
+  it('사진이 8장이면 모두 보여주고 더보기 버튼을 만들지 않는다', () => {
+    renderSheet({
+      status: 'ready',
+      detail: {
+        ...visited,
+        visits: [{
+          ...visited.visits[0],
+          photos: Array.from({ length: 8 }, (_, id) => ({ id, takenAt: null, fileUrl: `/photos/${id}` })),
+        }],
+      },
+      ownership: { status: 'unowned' },
+    })
+    expect(screen.getAllByRole('img')).toHaveLength(8)
+    expect(screen.queryByRole('button', { name: /더 있음/ })).toBeNull()
+  })
 })
