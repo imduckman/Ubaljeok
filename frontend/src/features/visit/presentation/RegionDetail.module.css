@@ -1,0 +1,121 @@
+.status {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.status p {
+  margin: 0;
+}
+
+.ownership {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-tile);
+}
+
+.ownership_unowned {
+  background: var(--soft);
+  color: var(--ink-2);
+}
+
+.ownership_ours {
+  background: var(--us-light);
+  color: var(--us-dark);
+}
+
+.ownership_theirs {
+  background: var(--them-light);
+  color: var(--them-dark);
+}
+
+.ownershipIcon {
+  display: flex;
+  flex: none;
+}
+
+.ownershipText {
+  min-width: 0;
+}
+
+.ownershipTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.ownershipNote {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+
+.empty p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.visits {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.visitHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.visitDate {
+  /* "12월 31일"이 들어가는 폭으로 고정해서 칩 위치를 맞춘다 */
+  flex: none;
+  width: 64px;
+  white-space: nowrap;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.rewardChip {
+  display: flex;
+}
+
+.photoGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+/* 시트 안의 보조 버튼: 눌리는 두께 없이 테두리만 있는 일반 박스 */
+.flatButton,
+.flatButton:active:not(:disabled) {
+  height: 48px;
+  color: var(--ink-2);
+  box-shadow: none;
+  transform: none;
+}

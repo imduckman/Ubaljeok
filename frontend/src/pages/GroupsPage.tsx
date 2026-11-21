@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Screen } from '../shared/components/layout/Screen'
 import { Button } from '../shared/components/ui/Button'
 import { useAuth } from '../features/auth/application/useAuth'
 import { useGroups } from '../features/group/application/useGroups'
+import { useWalletContext } from '../features/wallet/application/useWallet'
 import { EmptyGroups } from '../features/group/presentation/EmptyGroups'
 import { GroupCard } from '../features/group/presentation/GroupCard'
 import { JoinGroupSheet } from '../features/group/presentation/JoinGroupSheet'
@@ -12,10 +13,12 @@ import { ScreenSwitch } from './ScreenSwitch'
 import styles from './Pages.module.css'
 
 const FOOTER_BUTTON_STYLE = { fontSize: 17.5 }
+const NOTICE_DURATION_MS = 4000
 
 export function GroupsPage() {
   const { user, logout } = useAuth()
-  const { groups, currentGroup, isLoading, loadErrorMessage, refreshGroups, selectGroup } = useGroups()
+  const { groups, currentGroup, isLoading, loadErrorMessage, refreshGroups, selectGroup, groupNotice, clearGroupNotice } = useGroups()
+  const { balances } = useWalletContext()
   const navigate = useNavigate()
   const [isJoinSheetOpen, setIsJoinSheetOpen] = useState(false)
   // 카드를 누르면 펼쳐지기만 하고, '그룹으로 이동'을 눌러야 지금 그룹이 바뀐다.
@@ -23,6 +26,13 @@ export function GroupsPage() {
   const nickname = user?.nickname ?? ''
   const hasGroups = groups.length > 0
   const expandedGroupId = selectedGroupId ?? currentGroup?.groupId ?? null
+
+  // 나가기·삭제 안내는 몇 초 보여준 뒤 지운다.
+  useEffect(() => {
+    if (!groupNotice) return
+    const timer = window.setTimeout(clearGroupNotice, NOTICE_DURATION_MS)
+    return () => window.clearTimeout(timer)
+  }, [groupNotice, clearGroupNotice])
 
   const handleEnterGroup = (groupId: number) => {
     selectGroup(groupId)
@@ -55,6 +65,12 @@ export function GroupsPage() {
         </button>
       </div>
 
+      {groupNotice ? (
+        <p className={styles.notice} role="status">
+          {groupNotice}
+        </p>
+      ) : null}
+
       {isLoading && !hasGroups ? (
         <p className={styles.status} role="status">
           그룹을 불러오는 중…
@@ -78,9 +94,8 @@ export function GroupsPage() {
             {groups.map((group, index) => (
               <li key={group.groupId}>
                 <GroupCard
-                  group={group}
+                  group={{ ...group, walletBalance: balances[group.groupId] ?? group.walletBalance }}
                   index={index}
-                  isCurrent={group.groupId === currentGroup?.groupId}
                   isSelected={group.groupId === expandedGroupId}
                   onSelect={() => setSelectedGroupId(group.groupId)}
                   onEnter={() => handleEnterGroup(group.groupId)}

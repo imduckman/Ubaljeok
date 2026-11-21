@@ -5,6 +5,15 @@
   color: var(--ink-2);
 }
 
+.titleName {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
 .title {
   margin: 6px 0 0;
   font-size: 28px;
@@ -95,6 +104,10 @@
 }
 
 .groupName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 17px;
   font-weight: 800;
 }
@@ -107,6 +120,7 @@
 }
 
 .coin {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 5px;

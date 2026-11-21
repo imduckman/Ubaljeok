@@ -1,5 +1,4 @@
 import { Card } from '../../../shared/components/ui/Card'
-import { Chip } from '../../../shared/components/ui/Chip'
 import type { Group } from '../domain/Group'
 import styles from './Group.module.css'
 
@@ -14,13 +13,12 @@ const AVATAR_CLASSES = [styles.avatarLight, styles.avatarIndigo]
 interface GroupCardProps {
   group: Group
   index: number
-  isCurrent: boolean
   isSelected: boolean
   onSelect: () => void
   onEnter: () => void
 }
 
-export function GroupCard({ group, index, isCurrent, isSelected, onSelect, onEnter }: GroupCardProps) {
+export function GroupCard({ group, index, isSelected, onSelect, onEnter }: GroupCardProps) {
   const avatarClass = isSelected ? styles.avatarPink : AVATAR_CLASSES[index % AVATAR_CLASSES.length]
   const visibleMembers = group.members.slice(0, MAX_VISIBLE_FACES)
   const hasMoreMembers = group.members.length > MAX_VISIBLE_FACES
@@ -39,16 +37,15 @@ export function GroupCard({ group, index, isCurrent, isSelected, onSelect, onEnt
           <div className={styles.cardBody}>
             <div className={styles.nameRow}>
               <span className={styles.groupName}>{group.name}</span>
-              {isCurrent ? <Chip>지금 그룹</Chip> : null}
             </div>
             <p className={styles.meta}>
-              멤버 {group.members.length}명{group.visitedRegionCount !== undefined && ` · 동네 ${group.visitedRegionCount}칸`}
+              멤버 {group.members.length}명 · 동네 {group.visitedRegionCount ?? 0}칸
             </p>
           </div>
-          {group.walletBalance !== undefined && <span className={styles.coin} aria-label={`코인 ${group.walletBalance}`}>
+          <span className={styles.coin} aria-label={`코인 ${group.walletBalance ?? 0}`}>
             <span className={styles.coinDot} aria-hidden="true" />
-            {group.walletBalance}
-          </span>}
+            {group.walletBalance ?? 0}
+          </span>
         </div>
       </button>
 
