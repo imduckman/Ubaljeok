@@ -1,0 +1,121 @@
+.card {
+  position: relative;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  box-shadow: var(--float);
+}
+
+.body {
+  width: 100%;
+  min-height: 72px;
+  padding: 14px 52px 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.expand {
+  border: none;
+  border-radius: var(--radius-card);
+  background: none;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.expand:disabled {
+  cursor: default;
+}
+
+.expand:focus-visible {
+  outline: 3px solid var(--them);
+  outline-offset: 2px;
+}
+
+.texts {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.meta {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.owner {
+  flex: none;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: var(--radius-chip);
+  padding: 3px 7px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.owner_unowned {
+  background: var(--soft);
+  color: var(--ink-2);
+}
+
+.owner_ours {
+  background: var(--us-light);
+  color: var(--us-dark);
+}
+
+.owner_theirs {
+  background: var(--them-light);
+  color: var(--them-dark);
+}
+
+.more {
+  flex: none;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.retry {
+  margin-left: auto;
+  min-height: 44px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--us-dark);
+  cursor: pointer;
+}
+
+.close {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 40px;
+  height: 40px;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: var(--radius-tile);
+  background: none;
+  color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}

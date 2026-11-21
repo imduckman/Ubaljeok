@@ -11,4 +11,6 @@
 body {
   margin: 0;
   word-break: keep-all;
+  /* 띄어쓰기 없는 긴 글이 칸을 넘칠 때만 단어 중간에서 줄을 바꾼다. */
+  overflow-wrap: anywhere;
 }

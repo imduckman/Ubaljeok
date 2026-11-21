@@ -15,6 +15,10 @@ function renderPage() {
     selectGroup: () => {},
     createGroup: async () => group,
     joinGroup: async () => group,
+    leaveGroup: async () => {},
+    deleteGroup: async () => {},
+    groupNotice: null,
+    clearGroupNotice: () => {},
   }
   return render(
     <MemoryRouter>

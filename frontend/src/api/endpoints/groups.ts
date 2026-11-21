@@ -34,6 +34,18 @@ export async function createGroup(body: CreateGroupRequest): Promise<Group> {
   return toGroup(group)
 }
 
+/** 그룹 나가기. 혼자 남은 그룹이면 서버가 그룹을 삭제한다. */
+export async function leaveGroup(groupId: number): Promise<void> {
+  if (USE_MOCK_API) return mockServer.leaveGroup(groupId)
+  await request<void>(`/groups/${groupId}/members/me`, { method: 'DELETE' })
+}
+
+/** 그룹 삭제. 그룹장만 할 수 있다. */
+export async function deleteGroup(groupId: number): Promise<void> {
+  if (USE_MOCK_API) return mockServer.deleteGroup(groupId)
+  await request<void>(`/groups/${groupId}`, { method: 'DELETE' })
+}
+
 export async function joinGroup({ inviteCode }: JoinGroupRequest): Promise<Group> {
   if (USE_MOCK_API) return mockServer.joinGroup({ inviteCode })
   const { group } = await request<{ group: GroupDetail }>('/groups/join', {

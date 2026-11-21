@@ -6,7 +6,7 @@
 import { ApiError } from '../../shared/types/api'
 import type { LoginRequest, SignupRequest, User } from '../../features/auth/domain/User'
 import type { CreateGroupRequest, Group, JoinGroupRequest } from '../../features/group/domain/Group'
-import { MAX_GROUP_MEMBERS } from '../../features/group/domain/Group'
+import { MAX_GROUP_MEMBERS, isGroupOwner, removeMember } from '../../features/group/domain/Group'
 
 interface StoredUser extends User {
   password: string
@@ -88,6 +88,14 @@ function requireSession(database: MockDatabase): StoredUser {
   const user = database.users.find((candidate) => candidate.userId === database.sessionUserId)
   if (!user) throw new ApiError(401, 'UNAUTHORIZED', '다시 로그인해 주세요.')
   return user
+}
+
+function findMyGroup(database: MockDatabase, groupId: number, userId: number): Group {
+  const group = database.groups.find((candidate) => candidate.groupId === groupId)
+  if (!group || !group.members.some((member) => member.userId === userId)) {
+    throw new ApiError(404, 'GROUP_NOT_FOUND', '이미 없어졌거나 내가 속하지 않은 그룹이에요.')
+  }
+  return group
 }
 
 function createInviteCode(database: MockDatabase): string {
@@ -177,6 +185,30 @@ export const mockServer = {
     group.members.push({ userId: user.userId, nickname: user.nickname, role: 'MEMBER' })
     save(database)
     return group
+  },
+
+  async leaveGroup(groupId: number): Promise<void> {
+    await delay()
+    const database = load()
+    const user = requireSession(database)
+    const group = findMyGroup(database, groupId, user.userId)
+    const next = removeMember(group, user.userId)
+    database.groups = next
+      ? database.groups.map((candidate) => (candidate.groupId === groupId ? next : candidate))
+      : database.groups.filter((candidate) => candidate.groupId !== groupId)
+    save(database)
+  },
+
+  async deleteGroup(groupId: number): Promise<void> {
+    await delay()
+    const database = load()
+    const user = requireSession(database)
+    const group = findMyGroup(database, groupId, user.userId)
+    if (!isGroupOwner(group, user.userId)) {
+      throw new ApiError(403, 'NOT_GROUP_OWNER', '그룹장만 그룹을 삭제할 수 있어요.')
+    }
+    database.groups = database.groups.filter((candidate) => candidate.groupId !== groupId)
+    save(database)
   },
 
   /** 개발용: 가짜 데이터를 처음 상태로 되돌린다. */

@@ -35,6 +35,7 @@ function GroupSession({ children, userId }: { children: ReactNode; userId?: numb
   const [currentGroupId, setCurrentGroupId] = useState(() => readSavedGroupId(storageKey))
   const [isLoading, setIsLoading] = useState(userId !== undefined)
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null)
+  const [groupNotice, setGroupNotice] = useState<string | null>(null)
   const pendingLoad = useRef<AbortController | null>(null)
 
   const loadGroups = useCallback(async () => {
@@ -98,12 +99,51 @@ function GroupSession({ children, userId }: { children: ReactNode; userId?: numb
     [selectGroup],
   )
 
+  const removeGroup = useCallback((groupId: number) => {
+    setGroups((previous) => previous.filter((item) => item.groupId !== groupId))
+  }, [])
+
+  const leaveGroup = useCallback(
+    async (groupId: number) => {
+      const name = groups.find((item) => item.groupId === groupId)?.name ?? '그룹'
+      await groupApi.leaveGroup(groupId)
+      setGroupNotice(`"${name}"에서 나왔어요.`)
+      removeGroup(groupId)
+    },
+    [groups, removeGroup],
+  )
+
+  const deleteGroup = useCallback(
+    async (groupId: number) => {
+      const name = groups.find((item) => item.groupId === groupId)?.name ?? '그룹'
+      await groupApi.deleteGroup(groupId)
+      setGroupNotice(`"${name}" 그룹을 삭제했어요.`)
+      removeGroup(groupId)
+    },
+    [groups, removeGroup],
+  )
+
+  const clearGroupNotice = useCallback(() => setGroupNotice(null), [])
+
   // 저장된 그룹이 목록에 없으면(탈퇴 등) 첫 그룹을 현재 그룹으로 본다.
   const currentGroup = groups.find((group) => group.groupId === currentGroupId) ?? groups[0] ?? null
 
   const value = useMemo<GroupContextValue>(
-    () => ({ groups, currentGroup, isLoading, loadErrorMessage, refreshGroups, selectGroup, createGroup, joinGroup }),
-    [groups, currentGroup, isLoading, loadErrorMessage, refreshGroups, selectGroup, createGroup, joinGroup],
+    () => ({
+      groups,
+      currentGroup,
+      isLoading,
+      loadErrorMessage,
+      refreshGroups,
+      selectGroup,
+      createGroup,
+      joinGroup,
+      leaveGroup,
+      deleteGroup,
+      groupNotice,
+      clearGroupNotice,
+    }),
+    [groups, currentGroup, isLoading, loadErrorMessage, refreshGroups, selectGroup, createGroup, joinGroup, leaveGroup, deleteGroup, groupNotice, clearGroupNotice],
   )
 
   return <GroupContext.Provider value={value}>{children}</GroupContext.Provider>

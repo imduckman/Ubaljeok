@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { getMe, login } from './auth'
-import { joinGroup, listMyGroups } from './groups'
+import { deleteGroup, joinGroup, leaveGroup, listMyGroups } from './groups'
 
 vi.mock('../client', () => ({
   USE_MOCK_API: false,
@@ -50,4 +50,12 @@ it('sends inviteCode and reads the joined group', async () => {
   expect(http).toHaveBeenNthCalledWith(1, '/groups/join', {
     method: 'POST', body: JSON.stringify({ inviteCode: group.inviteCode }),
   })
+})
+
+it('sends group leave and delete as DELETE requests', async () => {
+  http.mockResolvedValue(undefined)
+  await leaveGroup(10)
+  expect(http).toHaveBeenCalledWith('/groups/10/members/me', { method: 'DELETE' })
+  await deleteGroup(10)
+  expect(http).toHaveBeenCalledWith('/groups/10', { method: 'DELETE' })
 })
