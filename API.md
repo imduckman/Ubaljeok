@@ -1,7 +1,6 @@
 # API 계약 초안
 
-> 담당: 승민 (DB·백엔드) · 데이터 구조는 [ERD 초안](https://github.com/imduckman/Ubaljeok/pull/12) 참고
-> ✅ 구현됨: 인증·그룹 (`feature/backend/auth-group`), 동네·사진·방문 (`feature/backend/photo-visit`) · ★ 2주차 마일스톤 필요 API · 나머지는 초안
+> 인증·그룹·동네·사진·방문의 현재 응답은 이 문서에 정리한다. 데이터 제약은 [ERD](./docs/ERD.md), 후속 계약은 [MVP 개발 가이드](./docs/MVP-IMPLEMENTATION.md)를 따른다.
 
 ## 공통
 
@@ -238,14 +237,16 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
 | --- | --- | --- |
 | `groupId` | O | 기록할 그룹 |
 | `file` | O | JPEG 파일 |
-| `regionCode` | △ | 사진에 GPS가 없거나 지원 지역 밖일 때 **직접 고른 동네**. GPS로 판정되면 무시 |
+| `regionCode` | △ | 현재 동네를 자동으로 정할 수 없을 때 직접 고른 동네. GPS로 동네가 하나로 판정되면 무시 |
+
+**후속 변경** — 수원 밖으로 판정된 유효 GPS는 `regionCode`가 있어도 `422 OUT_OF_SUPPORTED_AREA`를 반환한다. GPS 없음·경계 후보 중복은 수동 기록을 유지한다. 코드·Mock·테스트를 같은 기능 PR에서 전환한다. [MVP 개발 명세](./docs/MVP-IMPLEMENTATION.md#3-사진지도)
 
 **처리 순서 (서버)**
 1. 그룹 멤버 확인 → JPEG·용량 확인
 2. 원본에서 촬영 시각·GPS 읽기 → PostGIS로 동네 판정
 3. 회전 반영·재인코딩, **GPS를 제거한 정제본만 저장**, 원본 폐기
 4. (그룹, 촬영일, 동네) 방문에 연결. 없으면 새 방문 생성
-5. 보상 대상 여부 판정 (GPS·촬영 시각 있음, 지원 지역 안, 미래 아님, 최근 30일)
+5. 보상 대상 여부 판정 (GPS·촬영 시각 유효, 지원 동네 하나, 접수 시각 기준 30일 전부터 +10분까지)
 
 **Response 201**
 ```json
@@ -276,11 +277,11 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
 | `out_of_area` | 위치가 지원 지역(수원시) 밖 |
 | `ambiguous_location` | 동네 경계선 위라 동네를 하나로 정하지 못함 |
 | `no_taken_at` | 촬영 시각이 없음 |
-| `future_date` | 촬영 시각이 미래 |
+| `future_date` | 촬영 시각이 서버 접수 시각보다 10분 넘게 미래 |
 | `older_than_30_days` | 업로드 시점 기준 30일보다 오래된 사진 |
 
 - 방문 날짜(`visitDate`): 촬영 시각의 **KST 날짜**. 촬영 시각이 없으면 업로드한 날
-- 촬영 시각에 시간대(OffsetTimeOriginal)가 없으면 국내 촬영으로 보고 KST로 처리
+- 촬영 시각에 시간대(OffsetTimeOriginal)가 없으면 KST로 처리. +10분은 기기 시계 오차 허용 범위이며 양쪽 시간 경계를 포함한다.
 - 같은 (그룹, 날짜, 동네)에 이미 방문이 있으면 그 방문에 사진만 추가 (`isNewVisit: false`)
 - 보상 대상이 아닌 방문(수동 등)에 보상 대상 사진이 추가되면 그때 **한 번만** `rewardEligible: true`로 바뀜
 - GPS 좌표는 응답으로 돌려주지 않음
@@ -292,7 +293,7 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
 | --- | --- |
 | 그룹 멤버 아님 | `403 NOT_GROUP_MEMBER` |
 | JPEG 아님 | `415 UNSUPPORTED_FORMAT` |
-| 15MB 초과 (`MAX_UPLOAD_MB`) | `413 FILE_TOO_LARGE` |
+| 15 MiB 초과 (`MAX_UPLOAD_MB`) | `413 FILE_TOO_LARGE` |
 | GPS로 동네를 못 정했는데 `regionCode`도 없음 | `422 REGION_REQUIRED` |
 | `regionCode`가 지원하는 동네가 아님 | `422 UNKNOWN_REGION` |
 | 같은 그룹에 같은 사진 재업로드 | `409 DUPLICATE_PHOTO` |
@@ -349,20 +350,16 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
 
 ---
 
-## 예정 엔드포인트 (3주차 이후, 상세는 추후 작성)
-- `GET /api/groups/{groupId}/wallet` — 공동 지갑 잔액·거래 내역
-- `POST /api/game/buildings/purchase` — 건물 구매 (그룹장만, 아니면 `403 NOT_GROUP_OWNER`)
-- `POST /api/game/buildings/upgrade` — 랜드마크 업그레이드 (그룹장만)
-- `POST /api/diary/jobs` — AI 영상 생성 요청
-- `GET /api/diary/jobs/{jobId}` — 영상 작업 상태 조회
+## 후속 계약
+
+[MVP 개발 가이드](./docs/MVP-IMPLEMENTATION.md)에 사진 목록·삭제, 방문 정산, 지갑·구매·업그레이드, 영상 일기 요청·상태·저장·재생 계약을 정리한다. 구현과 함께 이 문서의 API 예시 및 테스트를 갱신한다.
 
 ## 결정된 사항
 - 인증: JWT 대신 **세션 + HttpOnly 쿠키** (기획안 기준)
 - 필드 표기: **camelCase**
 - 초대 코드: **6자리**, 유효 기간 없음 / 그룹 최대 **6명**
 - 행정동 코드: 행정안전부 **10자리**(`adm_cd2`) 문자열
-- 사진 용량 상한: **15MB** (`MAX_UPLOAD_MB`로 변경 가능)
+- 사진 용량 상한: **15 MiB** (`MAX_UPLOAD_MB`로 변경 가능)
 - 사진의 GPS 좌표는 **DB에도 저장하지 않음** (동네 판정에만 쓰고 버림. 판정 결과인 동네만 저장)
 
-## 팀 논의가 필요한 점
-1. **group 전달 방식**: 사진·방문 API는 지금 `groupId`를 body/쿼리로 받음. `/api/groups/{groupId}/photos`처럼 주소에 넣을지 프론트와 결정
+- 기존 사진·방문 API의 `groupId` 전송 위치를 유지한다. 업로드는 multipart body, 방문 조회는 query를 사용한다.

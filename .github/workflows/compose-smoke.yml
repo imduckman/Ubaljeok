@@ -1,0 +1,39 @@
+name: Compose smoke
+
+on:
+  pull_request:
+  push:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  compose-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      COMPOSE_PROJECT_NAME: ubaljeok-smoke
+      NGINX_PORT: "18080"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start Compose
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+          docker compose up --build -d --wait --wait-timeout 120
+      - name: Check Nginx, API and seeded PostGIS data
+        run: |
+          curl --fail --silent --show-error "http://localhost:${NGINX_PORT}/"
+          curl --fail --silent --show-error "http://localhost:${NGINX_PORT}/api/health"
+          count=$(docker compose exec -T db psql -X -U ubaljeok -d ubaljeok -At -v ON_ERROR_STOP=1 \
+            -c "SELECT count(*) FROM regions WHERE data_version = 'ver20261001' AND ST_SRID(boundary) = 4326;")
+          test "$count" -eq 44
+      - name: Print containers and logs on failure
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --no-color --tail=100
+      - name: Remove smoke project
+        if: always()
+        run: docker compose down --volumes

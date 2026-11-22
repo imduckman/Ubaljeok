@@ -1,0 +1,213 @@
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 고르기 전 빈 화면 */
+.empty {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 20px 24px;
+  border: 2px dashed var(--us-light-edge);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  text-align: center;
+}
+
+.emptyCharacters {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  line-height: 1.45;
+}
+
+.emptyText {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.pickButton {
+  height: 52px;
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius-button);
+  background: var(--us);
+  color: var(--paper);
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: var(--press) var(--us-dark);
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.pickButton:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--us-dark);
+}
+
+/* 숨긴 파일 선택칸에 키보드 초점이 오면 보이는 버튼에 테두리를 그린다 */
+.fileInput:focus-visible ~ .pickButton,
+.fileInput:focus-visible ~ .addTile {
+  outline: 3px solid var(--them);
+  outline-offset: 2px;
+}
+
+/* 고른 사진 3칸 목록 */
+.grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.addTile {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--radius-tile);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+
+.addTile span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+
+.addTile small {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 올린 뒤 결과 목록 */
+.results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.resultRow {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 12px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  box-shadow: var(--press-small) var(--line);
+}
+
+.row_needsRegion {
+  border-color: var(--coin);
+  box-shadow: var(--press-small) var(--coin-dark);
+}
+
+.row_failed {
+  border-color: var(--error);
+}
+
+.resultThumb {
+  width: 64px;
+}
+
+.resultBody {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.resultTitle {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.resultTitle svg {
+  color: var(--us);
+  flex: none;
+}
+
+.resultMeta {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.resultNote {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.errorText {
+  color: var(--error-text);
+}
+
+.rowButton {
+  margin-top: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-input);
+  background: var(--paper);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  box-shadow: var(--press-small) var(--line-strong);
+  cursor: pointer;
+}
+
+.rowButton:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.rowButton:focus-visible {
+  outline: 3px solid var(--them);
+  outline-offset: 2px;
+}
