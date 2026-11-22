@@ -82,6 +82,21 @@ export function isFinished(status: DiaryJobStatus): boolean {
   return status === 'completed' || status === 'failed'
 }
 
+/** 결과 파일 없이 '완료'로 온 작업은 볼 수 있는 영상이 없으므로 실패로 다룬다 (PR #28 리뷰) */
+export const RESULT_MISSING = 'RESULT_MISSING'
+
+export function normalizeJob(job: DiaryJob): DiaryJob {
+  if (job.status === 'completed' && !job.resultUrl) {
+    return { ...job, status: 'failed', errorCode: RESULT_MISSING, retryable: false }
+  }
+  return job
+}
+
+/** 같은 그룹에서 아직 끝나지 않은 작업 (가장 최근 것) */
+export function findActiveJob(jobs: DiaryJob[]): DiaryJob | null {
+  return jobs.filter((job) => !isFinished(job.status)).sort((a, b) => b.id - a.id)[0] ?? null
+}
+
 /** 상태 조회 간격: 처음 1분은 3초, 그 뒤로는 10초 (MVP-IMPLEMENTATION 5장) */
 export function pollDelayMs(elapsedMs: number): number {
   return elapsedMs < 60_000 ? 3_000 : 10_000

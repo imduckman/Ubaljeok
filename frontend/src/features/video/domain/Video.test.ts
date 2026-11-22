@@ -1,4 +1,4 @@
-import { isFinished, pollDelayMs, statusText, stepOf, validateSelection } from './Video'
+import { findActiveJob, isFinished, normalizeJob, pollDelayMs, RESULT_MISSING, statusText, stepOf, validateSelection, type DiaryJob } from './Video'
 
 describe('validateSelection', () => {
   it('3장보다 적으면 몇 장 더 골라야 하는지 알려준다', () => {
@@ -40,5 +40,54 @@ describe('작업 상태', () => {
     expect(pollDelayMs(0)).toBe(3_000)
     expect(pollDelayMs(59_999)).toBe(3_000)
     expect(pollDelayMs(60_000)).toBe(10_000)
+  })
+})
+
+function makeJob(overrides: Partial<DiaryJob>): DiaryJob {
+  return {
+    id: 1,
+    groupId: 7,
+    status: 'queued',
+    mode: 'mock',
+    style: 'natural',
+    createdAt: '2026-11-22T00:00:00Z',
+    updatedAt: '2026-11-22T00:00:00Z',
+    errorCode: null,
+    retryable: false,
+    retryAfterSeconds: null,
+    resultUrl: null,
+    ...overrides,
+  }
+}
+
+describe('normalizeJob', () => {
+  it('결과 파일 없이 완료로 온 작업은 다시 만들 수 없는 실패로 바꾼다', () => {
+    const job = normalizeJob(makeJob({ status: 'completed', resultUrl: null }))
+    expect(job.status).toBe('failed')
+    expect(job.errorCode).toBe(RESULT_MISSING)
+    expect(job.retryable).toBe(false)
+  })
+
+  it('결과 파일이 있는 완료와 진행 중 작업은 그대로 둔다', () => {
+    const done = makeJob({ status: 'completed', resultUrl: '/api/diary/jobs/1/file' })
+    const running = makeJob({ status: 'generating' })
+    expect(normalizeJob(done)).toBe(done)
+    expect(normalizeJob(running)).toBe(running)
+  })
+})
+
+describe('findActiveJob', () => {
+  it('끝나지 않은 작업 중 가장 최근 것을 고른다', () => {
+    const jobs = [
+      makeJob({ id: 3, status: 'completed', resultUrl: 'x' }),
+      makeJob({ id: 1, status: 'queued' }),
+      makeJob({ id: 2, status: 'editing' }),
+    ]
+    expect(findActiveJob(jobs)?.id).toBe(2)
+  })
+
+  it('진행 중 작업이 없으면 null', () => {
+    expect(findActiveJob([makeJob({ status: 'failed' })])).toBeNull()
+    expect(findActiveJob([])).toBeNull()
   })
 })

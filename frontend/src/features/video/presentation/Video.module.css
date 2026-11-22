@@ -201,20 +201,6 @@
   object-fit: contain;
 }
 
-.playerFallback {
-  padding: 40px 20px;
-  border-radius: var(--radius-card);
-  background: var(--soft);
-  text-align: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink-2);
-}
-
-.playerFallback p {
-  margin: 0;
-}
-
 .resultMeta {
   display: flex;
   gap: 6px;

@@ -5,7 +5,7 @@ import { USE_MOCK_API } from '../api/client'
 import { Screen } from '../shared/components/layout/Screen'
 import { Button } from '../shared/components/ui/Button'
 import { Character } from '../shared/components/ui/Character'
-import { getErrorMessage } from '../shared/types/api'
+import { ApiError, getErrorMessage } from '../shared/types/api'
 import { useGroups } from '../features/group/application/useGroups'
 import { useDiaryJob } from '../features/video/application/useDiaryJob'
 import { DiaryJobView } from '../features/video/presentation/DiaryJobView'
@@ -22,7 +22,16 @@ import {
 import pageStyles from './Pages.module.css'
 import styles from './VideoPage.module.css'
 
-type PhotosState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; photos: GroupPhoto[] }
+type PhotosState =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'unavailable' }
+  | { status: 'ready'; photos: GroupPhoto[] }
+
+/** 서버에 아직 없는 API(404·405·501)는 '준비 중'으로 보여준다. 실제 API 모드에서 백엔드 구현 전에 화면이 깨지지 않게 한다 */
+function isNotReady(error: unknown): boolean {
+  return error instanceof ApiError && [404, 405, 501].includes(error.status)
+}
 
 /** 영상 일기: 사진 3–5장 · 대표 사진 · 스타일 · 하고 싶은 말 → 만들기 → 진행 → 재생 */
 export function VideoPage() {
@@ -56,13 +65,16 @@ function VideoDiary({ groupId, groupName }: { groupId: number; groupName: string
   const { ids: selectedIds, representativeId } = selection
   const [style, setStyle] = useState<DiaryStyle>('natural')
   const [prompt, setPrompt] = useState('')
-  const diary = useDiaryJob()
+  const diary = useDiaryJob(groupId)
 
   useEffect(() => {
     let isActive = true
     listGroupPhotos(groupId)
       .then((photos) => isActive && setPhotosState({ status: 'ready', photos }))
-      .catch((error: unknown) => isActive && setPhotosState({ status: 'error', message: getErrorMessage(error, '사진을 불러오지 못했어요.') }))
+      .catch((error: unknown) => {
+        if (!isActive) return
+        setPhotosState(isNotReady(error) ? { status: 'unavailable' } : { status: 'error', message: getErrorMessage(error, '사진을 불러오지 못했어요.') })
+      })
     return () => {
       isActive = false
     }
@@ -112,6 +124,18 @@ function VideoDiary({ groupId, groupName }: { groupId: number; groupName: string
     </div>
   )
 
+  // 들어오자마자: 이 그룹에서 진행 중인 작업이 있는지 먼저 확인한다
+  if (diary.isRestoring) {
+    return (
+      <Screen>
+        {topBar}
+        <p className={pageStyles.status} role="status">
+          불러오는 중…
+        </p>
+      </Screen>
+    )
+  }
+
   // 작업이 시작된 뒤: 진행 · 완성 · 실패
   if (job) {
     const footer =
@@ -127,7 +151,7 @@ function VideoDiary({ groupId, groupName }: { groupId: number; groupName: string
           <Button variant="secondary" onClick={diary.reset}>
             사진 다시 고르기
           </Button>
-          {job.retryable ? (
+          {job.retryable && !selectionProblem ? (
             <Button isLoading={diary.isSubmitting} onClick={submit}>
               다시 만들기
             </Button>
@@ -181,6 +205,14 @@ function VideoDiary({ groupId, groupName }: { groupId: number; groupName: string
         <p className={pageStyles.status} role="status">
           사진을 불러오는 중…
         </p>
+      ) : photosState.status === 'unavailable' ? (
+        <div className={styles.centerBox} role="status">
+          <Character size={52} />
+          <p className={styles.emptyTitle}>영상 일기는 아직 준비 중이에요. 곧 만들 수 있어요.</p>
+          <Button variant="secondary" onClick={() => navigate('/map')}>
+            지도로 가기
+          </Button>
+        </div>
       ) : photosState.status === 'error' ? (
         <div className={styles.centerBox} role="alert">
           <p>{photosState.message}</p>

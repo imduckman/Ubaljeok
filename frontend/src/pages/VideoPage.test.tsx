@@ -1,11 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react'
+import { mockDiaryServer } from '../api/mock/mockDiary'
 import { MemoryRouter } from 'react-router'
 import { GroupContext, type GroupContextValue } from '../features/group/application/groupContext'
 import { VideoPage } from './VideoPage'
 
-const group = { groupId: 101, name: '밥친구들', inviteCode: 'WK7Q2M', members: [] }
+const defaultGroup = { groupId: 101, name: '밥친구들', inviteCode: 'WK7Q2M', members: [] }
 
-function renderPage() {
+function renderPage(group = defaultGroup) {
   const value: GroupContextValue = {
     groups: [group],
     currentGroup: group,
@@ -71,5 +72,19 @@ describe('VideoPage', () => {
     fireEvent.click(screen.getByRole('radio', { name: /영화처럼/ }))
     expect(screen.getByRole('radio', { name: /영화처럼/ }).getAttribute('aria-checked')).toBe('true')
     expect(screen.getByRole('radio', { name: /자연스럽게/ }).getAttribute('aria-checked')).toBe('false')
+  })
+
+  it('만드는 중에 나갔다 돌아오면 진행 중인 작업을 이어서 보여준다', async () => {
+    // 다른 테스트와 섞이지 않게 별도 그룹을 쓴다
+    const group = { ...defaultGroup, groupId: 202 }
+    await mockDiaryServer.createJob({ groupId: 202, photoIds: [20201, 20202, 20203], representativePhotoId: 20201, style: 'natural' })
+
+    const first = renderPage(group)
+    expect(await screen.findByText('영상을 만들고 있어요')).toBeTruthy()
+    first.unmount()
+
+    renderPage(group)
+    expect(await screen.findByText('영상을 만들고 있어요')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '영상 만들기' })).toBeNull()
   })
 })

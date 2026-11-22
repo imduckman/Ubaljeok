@@ -4,6 +4,8 @@
  * - 작업: 만든 뒤 시간이 지나면 queued → generating → editing → completed 로 넘어간다
  * - 결과: 브라우저에서 고른 사진을 이어 붙인 짧은 테스트 영상(WebM)을 만든다
  * - 프롬프트에 "실패"를 넣으면 생성 단계에서 실패한다 (retryable)
+ * - 녹화를 지원하지 않는 환경이면 결과 파일이 없으므로 EDIT_FAILED로 실패한다
+ * - 작업은 모듈 메모리에 남아서, 화면을 나갔다 돌아와도 진행 중인 작업을 다시 찾을 수 있다
  */
 import { ApiError } from '../../shared/types/api'
 import type { CreateDiaryJobRequest, DiaryJob, GroupPhoto } from '../../features/video/domain/Video'
@@ -79,7 +81,10 @@ function advance(stored: StoredJob): DiaryJob {
       stored.photos.map((photo) => ({ imageUrl: photo.fileUrl, title: photo.regionName, date: photo.visitDate })),
     ).then(
       (url) => {
-        stored.job = { ...stored.job, status: 'completed', resultUrl: url, updatedAt: new Date().toISOString() }
+        // 녹화를 못 하는 브라우저면 결과 파일이 없다. 완료로 두지 않고 실패로 알린다 (PR #28 리뷰)
+        stored.job = url
+          ? { ...stored.job, status: 'completed', resultUrl: url, updatedAt: new Date().toISOString() }
+          : { ...stored.job, status: 'failed', errorCode: 'EDIT_FAILED', retryable: false, updatedAt: new Date().toISOString() }
         return url
       },
       () => {
@@ -124,6 +129,14 @@ export const mockDiaryServer = {
     }
     jobs.set(job.id, { job, startedAt: Date.now(), photos: ordered, shouldFail: Boolean(prompt?.includes('실패')), rendering: null })
     return job
+  },
+
+  async listJobs(groupId: number): Promise<DiaryJob[]> {
+    await delay(150)
+    return [...jobs.values()]
+      .filter(({ job }) => job.groupId === groupId)
+      .map((stored) => advance(stored))
+      .sort((a, b) => b.id - a.id)
   },
 
   async getJob(jobId: number): Promise<DiaryJob> {
