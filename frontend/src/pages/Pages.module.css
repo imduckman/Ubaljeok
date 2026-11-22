@@ -63,9 +63,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 18px;
 }
 
 .groupPill {
+  min-width: 0;
   height: 46px;
   padding: 0 14px 0 6px;
   border: 1.5px solid var(--line);
@@ -82,7 +84,73 @@
   text-decoration: none;
 }
 
+.groupPill svg {
+  flex-shrink: 0;
+}
+
+.mapFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mapTools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mapTools > .uploadButton {
+  height: 46px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.settingsButton {
+  height: 46px;
+  padding: 0 12px 0 16px;
+  gap: 6px;
+  flex: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--paper);
+  box-shadow: var(--press) var(--line-strong);
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.settingsButton:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--line-strong);
+}
+
+.notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-tile);
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.groupPillName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .groupPillAvatar {
+  flex-shrink: 0;
   width: 32px;
   height: 32px;
   border-radius: 11px;
@@ -96,6 +164,7 @@
 
 .walletPill {
   position: relative;
+  flex-shrink: 0;
   margin-left: auto;
   height: 46px;
   padding: 0 26px 0 12px;

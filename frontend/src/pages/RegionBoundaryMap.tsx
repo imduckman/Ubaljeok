@@ -11,13 +11,24 @@ setWorkerUrl(workerUrl)
 
 const visitLabels = ['1회', '2회', '3–4회', '5–9회', '10회+']
 
-export function RegionBoundaryMap({
-  region = suwonRegion,
-  groupId,
-}: {
+export interface SelectedRegion {
+  regionCode: string
+  name: string
+}
+
+interface RegionBoundaryMapProps {
   region?: typeof suwonRegion
   groupId: number
-}) {
+  /** 있으면 동네를 눌렀을 때 이 함수로 알려주고, 지도 아래 임시 칸은 띄우지 않는다. */
+  onSelectRegion?: (selected: SelectedRegion) => void
+}
+
+export function RegionBoundaryMap({ region = suwonRegion, groupId, onSelectRegion }: RegionBoundaryMapProps) {
+  // 지도는 한 번만 만들기 때문에, 최신 콜백을 ref로 들고 있는다.
+  const onSelectRef = useRef(onSelectRegion)
+  useEffect(() => {
+    onSelectRef.current = onSelectRegion
+  }, [onSelectRegion])
   const popupRef = useRef<Popup | null>(null)
   const [selection, setSelection] = useState<string | null>(null)
   const container = useRef<HTMLDivElement>(null)
@@ -94,11 +105,17 @@ const fillColor: string | ExpressionSpecification = firstVisit
         })
         popupRef.current = popup
         map.on('click', 'regions', (event) => {
-          const fullName = event.features?.[0]?.properties?.adm_nm
+          const properties = event.features?.[0]?.properties
+          const fullName = properties?.adm_nm
           if (typeof fullName !== 'string') return
           const name = fullName.trim().split(/\s+/).at(-1)
           if (!name) return
-          setSelection(name)
+          const regionCode = properties?.regionCode ?? properties?.adm_cd2
+          if (onSelectRef.current && typeof regionCode === 'string') {
+            onSelectRef.current({ regionCode, name })
+          } else {
+            setSelection(name)
+          }
           popup.setLngLat(event.lngLat).setText(name).addTo(map)
         })
         map.on('error', () => setStatus('error'))

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import styles from './Chip.module.css'
 
 interface ChipProps {
-  tone?: 'pink' | 'gold'
+  tone?: 'pink' | 'gold' | 'gray'
   children: ReactNode
 }
 

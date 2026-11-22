@@ -15,3 +15,8 @@
   background: var(--coin-light);
   color: var(--coin-text);
 }
+
+.gray {
+  background: var(--line-strong);
+  color: var(--ink-2);
+}
