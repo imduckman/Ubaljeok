@@ -138,26 +138,27 @@ function VideoDiary({ groupId, groupName }: { groupId: number; groupName: string
 
   // 작업이 시작된 뒤: 진행 · 완성 · 실패
   if (job) {
-    const footer =
-      job.status === 'completed' ? (
-        <>
-          <Button variant="secondary" onClick={diary.reset}>
-            새로 만들기
+    const footer = diary.needsLogin ? (
+      <Button onClick={() => navigate('/login')}>다시 로그인</Button>
+    ) : job.status === 'completed' ? (
+      <>
+        <Button variant="secondary" onClick={diary.reset}>
+          새로 만들기
+        </Button>
+        <Button onClick={() => navigate('/map')}>지도로 가기</Button>
+      </>
+    ) : job.status === 'failed' ? (
+      <>
+        <Button variant="secondary" onClick={diary.reset}>
+          사진 다시 고르기
+        </Button>
+        {job.retryable && !selectionProblem ? (
+          <Button isLoading={diary.isSubmitting} onClick={submit}>
+            다시 만들기
           </Button>
-          <Button onClick={() => navigate('/map')}>지도로 가기</Button>
-        </>
-      ) : job.status === 'failed' ? (
-        <>
-          <Button variant="secondary" onClick={diary.reset}>
-            사진 다시 고르기
-          </Button>
-          {job.retryable && !selectionProblem ? (
-            <Button isLoading={diary.isSubmitting} onClick={submit}>
-              다시 만들기
-            </Button>
-          ) : null}
-        </>
-      ) : null
+        ) : null}
+      </>
+    ) : null
 
     return (
       <Screen footer={footer}>

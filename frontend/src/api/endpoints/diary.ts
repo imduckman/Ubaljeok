@@ -14,12 +14,16 @@ export async function listGroupPhotos(groupId: number): Promise<GroupPhoto[]> {
   return photos
 }
 
-export async function createDiaryJob(body: CreateDiaryJobRequest): Promise<DiaryJob> {
+/**
+ * 영상 작업 만들기. 같은 요청을 다시 보낼 때(응답이 끊긴 뒤 재시도 등)는 같은 idempotencyKey를 넘겨야
+ * 서버가 첫 작업을 돌려주고 새 작업(과금)을 만들지 않는다 (MVP 4장).
+ */
+export async function createDiaryJob(body: CreateDiaryJobRequest, idempotencyKey: string): Promise<DiaryJob> {
   if (USE_MOCK_API) return mockDiaryServer.createJob(body)
   const { job } = await request<{ job: DiaryJob }>('/diary/jobs', {
     method: 'POST',
     body: JSON.stringify(body),
-    headers: { 'Idempotency-Key': crypto.randomUUID() },
+    headers: { 'Idempotency-Key': idempotencyKey },
   })
   return job
 }
