@@ -1,7 +1,6 @@
 # ERD 초안
 
-> 작성: 승민 (DB·백엔드) · 상태: 초안 · 기준 문서: 6주 개발 기획안 "최소 DB"
-> ★ 표시는 2주차(로그인 → 그룹 → 사진 업로드 → 동네 1곳 표시)에 바로 필요한 테이블입니다.
+> ★는 현재 마이그레이션에 반영된 테이블이다. 지갑·게임·영상의 후속 규칙은 [MVP 개발 가이드](./MVP-IMPLEMENTATION.md)를 따른다.
 
 ## 전체 관계도
 
@@ -52,7 +51,8 @@ erDiagram
     }
     regions {
         bigint id PK
-        varchar adm_code UK
+        varchar region_code UK
+        varchar adm_cd
         varchar name
         varchar sigungu_name
         geometry boundary
@@ -75,7 +75,6 @@ erDiagram
         varchar file_path
         char original_sha256
         timestamptz taken_at
-        geometry location
         varchar location_source
         boolean reward_eligible
         varchar ineligible_reason
@@ -95,6 +94,7 @@ erDiagram
         bigint region_id FK
         bigint counterparty_group_id FK
         varchar idempotency_key UK
+        uuid transfer_id
         timestamptz created_at
     }
     properties {
@@ -128,7 +128,7 @@ erDiagram
 
 ## 테이블별 설명과 제약조건
 
-[0001_auth_groups](../backend/alembic/versions/0001_auth_groups.py)는 users, sessions, groups, group_members를 생성합니다. 나머지 테이블은 설계 초안입니다. 현재 행정동 조회 API는 GeoJSON 경계 파일을 사용합니다.
+[0001_auth_groups](../backend/alembic/versions/0001_auth_groups.py)는 users, sessions, groups, group_members를 생성한다. [0002_regions_visits_photos](../backend/alembic/versions/0002_regions_visits_photos.py)는 regions, visits, photos를 생성한다. 조회 API는 GeoJSON 경계 파일을 읽고 방문 판정은 같은 버전의 PostGIS 원본 경계를 사용한다.
 
 ### ★ users (구현) — 계정
 | 컬럼 | 타입 | 제약 | 설명 |
@@ -172,14 +172,14 @@ erDiagram
 | 컬럼 | 타입 | 제약 | 설명 |
 | --- | --- | --- | --- |
 | id | BIGSERIAL | PK | |
-| adm_code | VARCHAR(10) | UNIQUE, NOT NULL | 행정안전부 행정동 코드 adm_cd2의 10자리 문자열. 공개 API 필드는 regionCode |
+| region_code | VARCHAR(10) | UNIQUE, NOT NULL | 행정안전부 `adm_cd2` 10자리 문자열. 공개 API 필드는 `regionCode` |
+| adm_cd | VARCHAR(8) | NOT NULL | 통계청 코드. 원본 자료 대조에 사용 |
 | name | VARCHAR(30) | NOT NULL | 예: 영통1동 |
 | sigungu_name | VARCHAR(30) | NOT NULL | 예: 수원시 영통구 |
 | boundary | geometry(MultiPolygon, 4326) | NOT NULL, GIST 인덱스 | 위치 판정용 원본 경계 |
 | data_version | VARCHAR(20) | NOT NULL | 경계 데이터 버전 (화면용 경계와 일치시킴) |
 
-- 동네 판정: `ST_Contains(boundary, 사진좌표)` — 서버(PostGIS)가 최종 판정
-- 후보가 2개 이상이거나 없으면 보상 보류 / 지원 지역 외 처리
+- 서버 PostGIS의 `ST_Covers`로 경계선을 포함해 판정한다. 후보 하나면 확정하고 후보가 둘 이상이면 수동 기록을 허용한다. 유효 GPS의 후보 0개는 후속 계약에서 `OUT_OF_SUPPORTED_AREA`로 처리한다.
 
 ### ★ visits — 방문 (그룹·날짜·동네 단위)
 | 컬럼 | 타입 | 제약 | 설명 |
@@ -204,12 +204,11 @@ erDiagram
 | visit_id | BIGINT | FK → visits, NOT NULL | |
 | uploader_id | BIGINT | FK → users, NOT NULL | |
 | file_path | VARCHAR(255) | NOT NULL | media_data 볼륨 내 정제본 경로 (GPS 제거됨) |
-| original_sha256 | CHAR(64) | NOT NULL | 원본 해시 (원본 파일은 폐기) |
+| original_sha256 | VARCHAR(64) | NOT NULL | 원본 해시 (원본 파일은 폐기) |
 | taken_at | TIMESTAMPTZ | NULL | EXIF 촬영 시각, 없으면 NULL |
-| location | geometry(Point, 4326) | NULL | 서버가 읽은 좌표, 없으면 NULL |
 | location_source | VARCHAR(10) | CHECK IN ('exif','manual') | |
 | reward_eligible | BOOLEAN | NOT NULL | 이 사진이 보상 근거가 되는지 |
-| ineligible_reason | VARCHAR(30) | NULL | 예: no_gps, out_of_area, future, older_than_30d |
+| ineligible_reason | VARCHAR(30) | NULL | 예: `no_gps`, `ambiguous_location`, `no_taken_at`, `future_date`, `older_than_30_days`. 기존 수원 밖 수동 기록은 `out_of_area`를 보존 |
 | created_at | TIMESTAMPTZ | NOT NULL | |
 
 - **UNIQUE (group_id, original_sha256)** → 같은 사진 재업로드로 중복 집계 방지
@@ -227,15 +226,15 @@ erDiagram
 | id | BIGSERIAL | PK | |
 | group_id | BIGINT | FK → groups, NOT NULL | 이 거래의 지갑 주인 |
 | amount | INT | NOT NULL, CHECK (amount <> 0) | +입금 / −출금 |
-| tx_type | VARCHAR(20) | CHECK IN ('first_visit','revisit','buy_building','upgrade_landmark','toll_paid','toll_received') | |
+| tx_type | VARCHAR(20) | CHECK IN ('first_visit','revisit','purchase','upgrade','toll_paid','toll_received') | |
 | visit_id | BIGINT | FK → visits, NULL | 방문 보상·통행료 근거 |
 | region_id | BIGINT | FK → regions, NULL | 구매·업그레이드·통행료 대상 동네 |
 | counterparty_group_id | BIGINT | FK → groups, NULL | 통행료 상대 그룹 |
-| idempotency_key | VARCHAR(80) | UNIQUE, NOT NULL | 예: `reward:visit:123` → **중복 보상 방지** |
+| idempotency_key | VARCHAR(80) | UNIQUE, NOT NULL | 예: `reward:visit:123` → 중복 보상 방지 |
+| transfer_id | UUID | NULL | 통행료 입금·출금 거래를 같은 키로 연결 |
 | created_at | TIMESTAMPTZ | NOT NULL | |
 
-- 통행료는 거래 2건(toll_paid −N, toll_received +N)을 **한 트랜잭션**에서 기록 → 차감액 = 입금액
-- wallets.balance 갱신과 원장 기록은 항상 같은 트랜잭션
+- 통행료 입출금·잔액·방문 자격 전환은 하나의 트랜잭션에서 갱신한다. 방문별 보상과 통행료 방향을 키로 중복을 방지한다. 통행료 출금액과 입금액은 동일하다.
 
 ### properties — 동네 소유권
 | 컬럼 | 타입 | 제약 | 설명 |
@@ -254,7 +253,7 @@ erDiagram
 | id | BIGSERIAL | PK | |
 | group_id | BIGINT | FK → groups, NOT NULL | |
 | requested_by | BIGINT | FK → users, NOT NULL | |
-| style | VARCHAR(10) | CHECK IN ('cinematic','anime','natural','funny') | 영화처럼/애니처럼/자연스럽게/웃기게 |
+| style | VARCHAR(10) | CHECK IN ('cinematic','animation','natural','funny') | 영화처럼/애니처럼/자연스럽게/웃기게 |
 | prompt | TEXT | NULL | |
 | provider | VARCHAR(20) | NOT NULL | 실제 제공자 또는 'mock' |
 | provider_job_id | VARCHAR(100) | NULL | 제출 직후 저장 → 재시작 시 조회 우선, 중복 과금 방지 |
@@ -274,6 +273,9 @@ erDiagram
 - UNIQUE (job_id, order_no)
 - 대표 사진은 작업당 1장: `CREATE UNIQUE INDEX ... ON video_job_photos (job_id) WHERE is_representative`
 
-## 팀 논의가 필요한 점
-1. **photos.location 저장 여부** — 저장 파일에서는 GPS를 지우지만, DB에 좌표를 남길지(재판정·디버깅용) 동네 코드만 남길지 결정 필요
-2. **사진 삭제 시** — 기획안대로 코인·소유권은 되돌리지 않음. photos 행을 지울지, 삭제 표시만 할지 결정 필요
+## 후속 마이그레이션 제약
+
+- GPS 좌표는 위치 판정에만 사용한다. 사진 정제본·DB·로그에 좌표를 남기지 않는다.
+- 사진과 영상은 `deleted_at`으로 파일 노출을 차단한 뒤 바이트를 정리한다. 원본 해시·방문·거래·소유권·이미 저장한 독립 영상은 보존한다.
+- 사진과 방문의 그룹, 영상 작업과 선택 사진의 그룹 일치를 DB 제약으로 보장한다. 작업 생성 트랜잭션에서 유효한 사진 3–5장과 대표 1장을 검증한다.
+- 영상 작업에는 `mode`, `caption`, `music`, `error_code`, `retryable`, `retry_after_seconds`와 제공자 상태 복구에 필요한 정보를 저장한다. 그룹당 활성 작업 1개를 보장한다.

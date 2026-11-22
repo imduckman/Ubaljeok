@@ -1,0 +1,58 @@
+.status {
+  margin: 0;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.status p {
+  margin: 0;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 46dvh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.option {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option span {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.option small {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.option:focus-visible {
+  outline: 3px solid var(--them);
+  outline-offset: -3px;
+}

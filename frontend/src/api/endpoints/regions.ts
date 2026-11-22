@@ -1,5 +1,14 @@
 import type { GeoJSONSource } from 'maplibre-gl'
 import { request, USE_MOCK_API } from '../client'
+import { loadMockRegions } from '../mock/mockRegions'
+import type { Region } from '../../shared/types/region'
+
+/** 동네 직접 고르기에 쓰는 지원 지역 행정동 목록 (API.md `GET /api/regions`) */
+export async function listRegions(): Promise<Region[]> {
+  if (USE_MOCK_API) return loadMockRegions()
+  const { regions } = await request<{ regions: Region[] }>('/regions')
+  return regions
+}
 
 type RegionBoundaries = Exclude<Parameters<GeoJSONSource['setData']>[0], string>
 

@@ -9,6 +9,7 @@ import { LoginPage } from './pages/LoginPage'
 import { MapPage } from './pages/MapPage'
 import { VideoPage } from './pages/VideoPage'
 import { SignupPage } from './pages/SignupPage'
+import { UploadPage } from './pages/UploadPage'
 
 export function AppRoutes() {
   return (
@@ -21,6 +22,7 @@ export function AppRoutes() {
       <Route path="/groups/:groupId/invite" element={<RequireAuth><GroupInvitePage /></RequireAuth>} />
       <Route path="/video" element={<RequireAuth><VideoPage /></RequireAuth>} />
       <Route path="/map" element={<RequireAuth><MapPage /></RequireAuth>} />
+      <Route path="/upload" element={<RequireAuth><UploadPage /></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

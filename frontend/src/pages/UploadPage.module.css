@@ -1,0 +1,56 @@
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.4px;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notice {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.invalidNote {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--error-text);
+}
+
+.tip {
+  padding: 12px 14px;
+  border-radius: var(--radius-tile);
+  background: var(--coin-light);
+  color: var(--coin-text);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.tip b {
+  font-weight: 800;
+}

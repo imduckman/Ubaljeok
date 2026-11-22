@@ -15,10 +15,12 @@ interface ErrorBody {
  * 인증은 서버 세션 + HttpOnly 쿠키 방식이라 credentials: 'include'로 쿠키를 함께 보낸다.
  */
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  // 사진처럼 FormData를 보낼 때는 브라우저가 multipart 경계값을 직접 붙이도록 Content-Type을 비워 둔다.
+  const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...init.headers },
+    headers: isFormData ? init.headers : { 'Content-Type': 'application/json', ...init.headers },
   })
 
   if (!response.ok) {
