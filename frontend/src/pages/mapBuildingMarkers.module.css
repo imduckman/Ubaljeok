@@ -1,0 +1,31 @@
+.marker {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.marker svg {
+  display: block;
+  width: 32px;
+  height: 38px;
+  overflow: visible;
+}
+
+.ours {
+  color: #f83b70;
+}
+
+.theirs {
+  color: #727aa7;
+}
+
+.marker:focus-visible {
+  outline: 3px solid #0e0f14;
+  outline-offset: 2px;
+}

@@ -7,6 +7,8 @@ import styles from './RegionBoundaryMap.module.css'
 import type { ExpressionSpecification } from 'maplibre-gl'
 import { getVisitMap, type VisitMapResponse } from '../api/endpoints/visits'
 
+import { mountBuildingMarkers } from './mapBuildingMarkers'
+
 setWorkerUrl(workerUrl)
 
 const visitLabels = ['1회', '2회', '3–4회', '5–9회', '10회+']
@@ -34,6 +36,7 @@ export function RegionBoundaryMap({ region = suwonRegion, groupId, onSelectRegio
   const container = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [visitLoadFailed, setVisitLoadFailed] = useState(false)
+  const [buildingLoadFailed, setBuildingLoadFailed] = useState(false)
 
   useEffect(() => {
     if (!container.current) return
@@ -104,6 +107,21 @@ const fillColor: string | ExpressionSpecification = firstVisit
           offset: 8,
         })
         popupRef.current = popup
+        mountBuildingMarkers(
+          map,
+          boundaries,
+          groupId,
+          controller.signal,
+          ({ regionCode, name, position }) => {
+            if (onSelectRef.current) {
+              onSelectRef.current({ regionCode, name })
+            } else {
+              setSelection(name)
+            }
+            popup.setLngLat(position).setText(name).addTo(map)
+          },
+          () => setBuildingLoadFailed(true),
+        )
         map.on('click', 'regions', (event) => {
           const properties = event.features?.[0]?.properties
           const fullName = properties?.adm_nm
@@ -160,6 +178,7 @@ const fillColor: string | ExpressionSpecification = firstVisit
           }}>닫기</button>
         </section>
       )}
+      {status === 'ready' && buildingLoadFailed && <p role="status">건물 정보를 불러오지 못했어요.</p>}
       {status === 'loading' && <p role="status">동네 경계를 불러오는 중…</p>}
       {status === 'error' && <p role="alert">동네 경계를 불러오지 못했어요.</p>}
       {status === 'ready' && visitLoadFailed && <p role="status">방문 기록을 불러오지 못했어요.</p>}
