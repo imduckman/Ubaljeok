@@ -1,4 +1,5 @@
-import { request, USE_MOCK_API } from '../client'
+﻿import { request, USE_MOCK_API } from '../client'
+import { getMockVisitMap } from '../mock/mockVisits'
 
 export type VisitMapResponse = {
   groupId: number
@@ -14,8 +15,10 @@ export async function getVisitMap(
   groupId: number,
   signal: AbortSignal,
 ): Promise<VisitMapResponse> {
+  signal.throwIfAborted()
+
   if (USE_MOCK_API) {
-    return { groupId, dataVersion: 'ver20261001', regions: [] }
+    return getMockVisitMap(groupId)
   }
 
   return request<VisitMapResponse>(`/visits/map?groupId=${groupId}`, { signal })
