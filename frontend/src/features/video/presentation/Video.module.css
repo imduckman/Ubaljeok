@@ -1,0 +1,247 @@
+/* 사진 고르기 */
+.pickerBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.photoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 10px;
+}
+
+.dimmed {
+  opacity: 0.45;
+}
+
+.photoCaption {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+.coverBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: var(--radius-tile);
+  background: var(--coin-light);
+}
+
+.coverTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--coin-text);
+}
+
+.coverHint {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--coin-text);
+}
+
+.coverRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.coverOption {
+  flex: none;
+  min-height: 44px;
+  padding: 4px 12px 4px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--paper);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.coverOption img {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.coverOptionActive {
+  border: 2px solid var(--coin-dark);
+  box-shadow: var(--press-small) var(--coin);
+}
+
+.coverOption:focus-visible,
+.styleCard:focus-visible {
+  outline: 3px solid var(--them);
+  outline-offset: 2px;
+}
+
+/* 스타일 */
+.styleGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.styleCard {
+  min-height: 72px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-tile);
+  background: var(--paper);
+  box-shadow: var(--press-small) var(--line-strong);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.styleCardActive {
+  border: 2px solid var(--us);
+  background: var(--us-light);
+  box-shadow: var(--press-small) var(--us-dark);
+}
+
+.styleLabel {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.styleCardActive .styleLabel {
+  color: var(--us-dark);
+}
+
+.styleDescription {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+/* 만드는 중 */
+.progressCard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  box-shadow: var(--press) var(--line);
+}
+
+.progressPhoto {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-tile);
+  overflow: hidden;
+}
+
+.progressPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.progressPulse {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.45) 50%, transparent 70%);
+  background-size: 250% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
+}
+
+.progressHint {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+/* 완성 */
+.resultCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.player {
+  width: 100%;
+  max-height: 62dvh;
+  aspect-ratio: 9 / 16;
+  border-radius: var(--radius-card);
+  background: var(--ink);
+  object-fit: contain;
+}
+
+.resultMeta {
+  display: flex;
+  gap: 6px;
+}
+
+.mockNote {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+/* 실패 */
+.failCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px;
+  border: 1.5px solid var(--error);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+}
+
+.failTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--error-text);
+}
+
+.failText {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressPulse {
+    animation: none;
+    opacity: 0;
+  }
+}
