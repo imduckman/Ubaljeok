@@ -6,7 +6,7 @@
 
 - `main`: 시연 가능한 안정 버전
 - `develop`: 주간 통합 브랜치
-- `feature/영역/integration`: 영역 통합 브랜치
+- `feature/영역/integration`: 여러 작업 PR을 먼저 모아야 할 때 팀이 합의해 만드는 영역 통합 브랜치
 - `feature/영역/작업명`: 세부 기능 브랜치
 - `release/*`: 릴리스 준비
 - `hotfix/*`: 긴급 수정
@@ -17,17 +17,26 @@
 
 | 작업 브랜치 | 분기 기준 | PR 병합 대상 |
 | --- | --- | --- |
-| `feature/*` | `develop` | `develop` |
+| `feature/영역/작업명` | 원본 `develop` (기본) | 원본 `develop` (기본) |
+| `feature/영역/작업명` (영역 통합 사용 합의 시) | 원본 `feature/영역/integration` | 원본 `feature/영역/integration` |
+| `feature/영역/integration` | 원본 `develop` | 원본 `develop` |
 | `release/*` | `develop` | `main`, `develop` |
 | `hotfix/*` | `main` | `main`, `develop` |
 
-- 영역 통합 브랜치를 사용하는 경우 세부 기능 → 영역 통합 → `develop` 순서로 PR을 만듭니다.
 - `release/*`에서는 버그 수정·문서·설정 등 출시 준비만 수행합니다. 새 기능은 추가하지 않습니다.
 - 릴리스 중 추가한 수정은 `develop`에도 PR로 반영합니다. 이미 같은 커밋이 포함되어 있으면 중복 PR은 만들지 않습니다.
 - 기능 브랜치는 통합 대상에 병합한 뒤 삭제합니다. 영역 통합·릴리스·핫픽스 브랜치는 필요한 모든 대상에 반영됐는지 확인한 뒤 삭제합니다. `main`·`develop`은 유지합니다.
 - 릴리스 버전 태그는 실제 시연·배포 버전을 확정할 때 `main`의 해당 커밋에 붙입니다.
 - 브랜치 관계가 남도록 GitHub의 **Create a merge commit** 방식을 사용합니다.
 - 초기 구성 PR은 Copilot이 생성한 `copilot/*` 브랜치를 사용하며, 이후 작업부터 위 이름 규칙을 따릅니다.
+
+## 작업 PR 대상 정하기
+
+1. **기본은 원본 `imduckman/Ubaljeok:develop`**입니다. Fork로 작업했다면 GitHub PR 화면에서 base repository는 `imduckman/Ubaljeok`, base branch는 `develop`, head fork는 내 Fork, compare branch는 내 작업 브랜치를 선택합니다.
+2. **예외는 팀이 그 작업의 중간 통합을 합의했고, 원본에 `feature/영역/integration`이 실제로 있는 경우**입니다. 두 조건을 모두 충족할 때 작업 PR은 그 통합 브랜치를 향합니다. 이후 영역 통합 브랜치에서 원본 `develop`으로 PR을 엽니다.
+3. 해당 통합 브랜치가 없거나 사용하기로 정하지 않았다면 작업이 준비되는 대로 원본 `develop`으로 PR을 엽니다. Git 운영 문서의 병합이나 통합 브랜치 생성 완료를 기다릴 필요가 없습니다. `feature/map/region-ui`처럼 `/integration`으로 끝나지 않는 기존 작업 브랜치는 해당 작업의 브랜치입니다.
+
+예를 들어 지도 방문 색칠은 원본의 `feature/map/integration` 사용을 별도로 합의하지 않았다면 `내 Fork:feature/map/visit-colors`에서 `imduckman/Ubaljeok:develop`으로 PR을 엽니다. 현재 브랜치는 [원본 저장소의 브랜치 목록](https://github.com/imduckman/Ubaljeok/branches)에서 확인합니다.
 
 ## 작업 규칙
 
@@ -82,6 +91,6 @@
 | GitHub Actions | 다양한 검사를 수행하는 Workflow 최소 5개와 실제 실행 결과 |
 
 - Compose와 Kubernetes는 평가표의 대안 조건이며, 이 프로젝트는 Docker Compose를 사용합니다.
-- 현재 `ci.yml`은 **Workflow 1개, Job 2개**입니다. 최종 개수 조건은 아직 충족하지 않았습니다.
-- 향후 `quality.yml`, `test-web.yml`, `test-api.yml`, `test-worker.yml`, `compose-smoke.yml`, `e2e.yml`, `security.yml`로 확장할 계획입니다. 이름만 만들거나 같은 검사를 복제해 개수를 채우지 않습니다.
+- `ci.yml`은 프론트엔드 테스트·빌드와 백엔드 pytest를, `quality.yml`은 프론트엔드 lint를 실행합니다.
+- 최종 워크플로 구성은 `quality.yml`, `test-web.yml`, `test-api.yml`, `test-worker.yml`, `compose-smoke.yml`, `e2e.yml`, `security.yml`입니다. 각 워크플로는 담당 영역의 실제 검사를 실행합니다.
 - 유료 AI API는 CI에서 호출하지 않습니다. 영상 생성 검사는 Mock Provider와 테스트 데이터를 사용하도록 구성합니다.
