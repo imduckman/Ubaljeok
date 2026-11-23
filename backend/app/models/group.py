@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, String, func
+from sqlalchemy import JSON, BigInteger, CheckConstraint, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
@@ -43,3 +43,13 @@ class GroupMember(Base):
 
     group: Mapped[Group] = relationship(back_populates="members")
     user: Mapped[User] = relationship()
+
+
+class GroupDeletion(Base):
+    """DB 삭제 후 파일 정리가 실패해도 요청자가 같은 DELETE로 재시도할 수 있다."""
+
+    __tablename__ = "group_deletions"
+
+    group_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+    requested_by: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    file_paths: Mapped[list[str]] = mapped_column(JSON, nullable=False)

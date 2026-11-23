@@ -1,4 +1,5 @@
 import { useEffect, useId, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import styles from './BottomSheet.module.css'
 
 interface BottomSheetProps {
@@ -23,7 +24,8 @@ export function BottomSheet({ isOpen, title, description, onClose, children }: B
 
   if (!isOpen) return null
 
-  return (
+  // 화면 맨 바깥(body)에 그려서, 어느 칸 안에서 열어도 지도·고정 영역보다 항상 위에 오게 한다.
+  return createPortal(
     <div className={styles.backdrop} onClick={onClose}>
       <section
         className={styles.sheet}
@@ -48,6 +50,7 @@ export function BottomSheet({ isOpen, title, description, onClose, children }: B
         </div>
         {children}
       </section>
-    </div>
+    </div>,
+    document.body,
   )
 }

@@ -1,6 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import { AuthProvider } from './features/auth/application/AuthProvider'
 import { GroupProvider } from './features/group/application/GroupProvider'
+import { WalletProvider } from './features/wallet/application/WalletProvider'
+import { ToastProvider } from './shared/components/toast/ToastProvider'
 import { GuestOnly, RequireAuth } from './shared/components/auth/RouteGuards'
 import { CreateGroupPage } from './pages/CreateGroupPage'
 import { GroupInvitePage } from './pages/GroupInvitePage'
@@ -31,7 +33,11 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <GroupProvider>
-          <AppRoutes />
+          <ToastProvider>
+            <WalletProvider>
+              <AppRoutes />
+            </WalletProvider>
+          </ToastProvider>
         </GroupProvider>
       </AuthProvider>
     </BrowserRouter>

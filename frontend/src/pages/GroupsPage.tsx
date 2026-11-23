@@ -4,6 +4,7 @@ import { Screen } from '../shared/components/layout/Screen'
 import { Button } from '../shared/components/ui/Button'
 import { useAuth } from '../features/auth/application/useAuth'
 import { useGroups } from '../features/group/application/useGroups'
+import { useWalletContext } from '../features/wallet/application/useWallet'
 import { EmptyGroups } from '../features/group/presentation/EmptyGroups'
 import { GroupCard } from '../features/group/presentation/GroupCard'
 import { JoinGroupSheet } from '../features/group/presentation/JoinGroupSheet'
@@ -17,6 +18,7 @@ const NOTICE_DURATION_MS = 4000
 export function GroupsPage() {
   const { user, logout } = useAuth()
   const { groups, currentGroup, isLoading, loadErrorMessage, refreshGroups, selectGroup, groupNotice, clearGroupNotice } = useGroups()
+  const { balances } = useWalletContext()
   const navigate = useNavigate()
   const [isJoinSheetOpen, setIsJoinSheetOpen] = useState(false)
   // 카드를 누르면 펼쳐지기만 하고, '그룹으로 이동'을 눌러야 지금 그룹이 바뀐다.
@@ -92,7 +94,7 @@ export function GroupsPage() {
             {groups.map((group, index) => (
               <li key={group.groupId}>
                 <GroupCard
-                  group={group}
+                  group={{ ...group, walletBalance: balances[group.groupId] ?? group.walletBalance }}
                   index={index}
                   isSelected={group.groupId === expandedGroupId}
                   onSelect={() => setSelectedGroupId(group.groupId)}
