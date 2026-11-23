@@ -97,7 +97,11 @@ export function MapPage() {
           fallbackBalance={currentGroup.walletBalance}
         />
       </div>
-      <RegionBoundaryMap onSelectRegion={setSelectedRegion} />
+      <RegionBoundaryMap
+        key={currentGroup.groupId}
+        groupId={currentGroup.groupId}
+        onSelectRegion={setSelectedRegion}
+      />
 
       <GroupSettingsSheet
         key={currentGroup.groupId}

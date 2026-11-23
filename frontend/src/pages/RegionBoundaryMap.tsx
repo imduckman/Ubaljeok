@@ -4,6 +4,10 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { suwonRegion } from './mapRegions'
 import styles from './RegionBoundaryMap.module.css'
+import type { ExpressionSpecification } from 'maplibre-gl'
+import { getVisitMap, type VisitMapResponse } from '../api/endpoints/visits'
+
+import { mountBuildingMarkers } from './mapBuildingMarkers'
 
 setWorkerUrl(workerUrl)
 
@@ -16,11 +20,12 @@ export interface SelectedRegion {
 
 interface RegionBoundaryMapProps {
   region?: typeof suwonRegion
+  groupId: number
   /** 있으면 동네를 눌렀을 때 이 함수로 알려주고, 지도 아래 임시 칸은 띄우지 않는다. */
   onSelectRegion?: (selected: SelectedRegion) => void
 }
 
-export function RegionBoundaryMap({ region = suwonRegion, onSelectRegion }: RegionBoundaryMapProps) {
+export function RegionBoundaryMap({ region = suwonRegion, groupId, onSelectRegion }: RegionBoundaryMapProps) {
   // 지도는 한 번만 만들기 때문에, 최신 콜백을 ref로 들고 있는다.
   const onSelectRef = useRef(onSelectRegion)
   useEffect(() => {
@@ -30,6 +35,8 @@ export function RegionBoundaryMap({ region = suwonRegion, onSelectRegion }: Regi
   const [selection, setSelection] = useState<string | null>(null)
   const container = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [visitLoadFailed, setVisitLoadFailed] = useState(false)
+  const [buildingLoadFailed, setBuildingLoadFailed] = useState(false)
 
   useEffect(() => {
     if (!container.current) return
@@ -37,9 +44,37 @@ export function RegionBoundaryMap({ region = suwonRegion, onSelectRegion }: Regi
     const mapInstance = { current: null as Map | null }
     const load = async () => {
       try {
-        const boundaries = await region.loadBoundaries(controller.signal)
-        const element = container.current
-        if (controller.signal.aborted || !element) return
+        const [boundaries, visits] = await Promise.all([
+  region.loadBoundaries(controller.signal),
+  getVisitMap(groupId, controller.signal).catch(() => null),
+])
+
+const element = container.current
+if (controller.signal.aborted || !element) return
+
+setVisitLoadFailed(visits === null)
+
+const defaultColor = '#ecedf1'
+const theme = getComputedStyle(element)
+const visitedRegions: VisitMapResponse['regions'] = visits?.regions ?? []
+const [firstVisit, ...remainingVisits] = visitedRegions
+
+const colorForLevel = (level: number) =>
+  theme.getPropertyValue(`--visit-${level}`).trim() || defaultColor
+
+const fillColor: string | ExpressionSpecification = firstVisit
+  ? [
+      'match',
+      ['get', 'regionCode'],
+      firstVisit.regionCode,
+      colorForLevel(firstVisit.level),
+      ...remainingVisits.flatMap(({ regionCode, level }) => [
+        regionCode,
+        colorForLevel(level),
+      ]),
+      defaultColor,
+    ]
+  : defaultColor
         const map = new Map({
           container: element,
           bounds: region.bounds,
@@ -54,7 +89,7 @@ export function RegionBoundaryMap({ region = suwonRegion, onSelectRegion }: Regi
               },
             },
             layers: [
-              { id: 'regions', type: 'fill', source: 'regions', paint: { 'fill-color': '#ecedf1' } },
+              { id: 'regions', type: 'fill', source: 'regions', paint: { 'fill-color': fillColor } },
               { id: 'region-depth', type: 'line', source: 'regions', paint: {
                 'line-color': '#d5d7de', 'line-width': 4, 'line-translate': [0, 4],
               } },
@@ -72,6 +107,21 @@ export function RegionBoundaryMap({ region = suwonRegion, onSelectRegion }: Regi
           offset: 8,
         })
         popupRef.current = popup
+        mountBuildingMarkers(
+          map,
+          boundaries,
+          groupId,
+          controller.signal,
+          ({ regionCode, name, position }) => {
+            if (onSelectRef.current) {
+              onSelectRef.current({ regionCode, name })
+            } else {
+              setSelection(name)
+            }
+            popup.setLngLat(position).setText(name).addTo(map)
+          },
+          () => setBuildingLoadFailed(true),
+        )
         map.on('click', 'regions', (event) => {
           const properties = event.features?.[0]?.properties
           const fullName = properties?.adm_nm
@@ -99,7 +149,7 @@ export function RegionBoundaryMap({ region = suwonRegion, onSelectRegion }: Regi
       popupRef.current = null
       mapInstance.current?.remove()
     }
-  }, [region])
+  }, [region, groupId])
 
   return (
     <section aria-label={`${region.name} 행정동 지도`}>
@@ -128,8 +178,10 @@ export function RegionBoundaryMap({ region = suwonRegion, onSelectRegion }: Regi
           }}>닫기</button>
         </section>
       )}
+      {status === 'ready' && buildingLoadFailed && <p role="status">건물 정보를 불러오지 못했어요.</p>}
       {status === 'loading' && <p role="status">동네 경계를 불러오는 중…</p>}
       {status === 'error' && <p role="alert">동네 경계를 불러오지 못했어요.</p>}
+      {status === 'ready' && visitLoadFailed && <p role="status">방문 기록을 불러오지 못했어요.</p>}
     </section>
   )
 }
