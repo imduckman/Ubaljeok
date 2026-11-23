@@ -29,6 +29,15 @@ function todayKst() {
   return now.toISOString().slice(0, 10)
 }
 
+function readPhotoUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new ApiError(500, 'UNKNOWN', '사진을 읽지 못했어요. 다시 시도해 주세요.'))
+    reader.readAsDataURL(file)
+  })
+}
+
 export const mockPhotoServer = {
   async uploadPhoto({ groupId, file, regionCode }: UploadPhotoRequest, signal?: AbortSignal): Promise<UploadPhotoResponse> {
     await delay()
@@ -63,18 +72,27 @@ export const mockPhotoServer = {
       : name.includes('old') ? 'older_than_30_days' : null
     const rewardEligible = ineligibleReason === null
     const visitDate = todayKst()
+    const fileUrl = await readPhotoUrl(file)
+    signal?.throwIfAborted()
+    // 파일을 읽는 사이 동일 사진 업로드가 완료된 경우도 중복 기록을 막는다.
+    if (uploadedKeys.has(key)) {
+      throw new ApiError(409, 'DUPLICATE_PHOTO', '이미 올린 사진이에요.')
+    }
+    const photoId = nextPhotoId++
+    const takenAt = hasGps ? new Date().toISOString() : null
     const visit = recordMockVisit(
       groupId,
       region.regionCode,
       visitDate,
       rewardEligible,
+      { id: photoId, takenAt, fileUrl },
     )
     uploadedKeys.add(key)
 
     return {
       photo: {
-        id: nextPhotoId++,
-        takenAt: hasGps ? new Date().toISOString() : null,
+        id: photoId,
+        takenAt,
         locationSource: hasGps ? 'exif' : 'manual',
         rewardEligible,
         ineligibleReason,

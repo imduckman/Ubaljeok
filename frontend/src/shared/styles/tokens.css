@@ -4,6 +4,9 @@
  * 기준 문서: docs/UI-STYLEGUIDE.md
  */
 :root {
+  /* 모바일에서 누르는 요소의 최소 영역 */
+  --touch-target-min: 44px;
+
   /* 뜻이 있는 색: 우리 그룹 */
   --us: #f2426d;
   --us-dark: #c81e52;
