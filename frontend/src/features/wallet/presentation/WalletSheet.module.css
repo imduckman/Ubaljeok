@@ -1,0 +1,104 @@
+/* 지갑 시트. 색은 확정 전이라 이 파일 안에서만 쓴다. */
+/* 제목 "지갑": 다른 시트 제목(21px)보다 크게, 바느질 선 안쪽으로 조금 들여서 */
+.title {
+  display: inline-block;
+  padding-left: 8px;
+  font-size: 27px;
+}
+
+/* 그룹 카드: 실제 신용카드 비율(85.6 × 54mm ≈ 1.586 : 1)로 가운데에 놓는다 */
+.card {
+  position: relative;
+  align-self: center;
+  width: min(100%, 300px);
+  aspect-ratio: 85.6 / 54;
+  padding: 16px 18px;
+  border-radius: 14px;
+  /* 지도 범례 "3–4회" 핑크 */
+  background: var(--visit-3);
+  /* 연한 핑크 위라 흰 글씨 대신 진한 핑크 글씨로 읽기 쉽게 한다 */
+  color: #5c0f29;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 0 var(--visit-4);
+}
+
+.cardName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* 실제 카드처럼 이름 아래 왼쪽에 IC 칩 */
+.chip {
+  margin-top: 14px;
+  width: 38px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--us-light);
+  opacity: 0.9;
+}
+
+/* 잔액은 카드 아래쪽에 */
+.balance {
+  margin-top: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  line-height: 1;
+}
+
+.unit {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.change {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: var(--coin-gain);
+}
+
+/* 아래 주머니 + 영수증 */
+.receiptPocket {
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--soft);
+}
+
+.pocketLabel {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-2);
+}
+
+.receipt {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.receiptEmpty {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.receiptNote {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink-3);
+}

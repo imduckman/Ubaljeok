@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { Screen } from '../shared/components/layout/Screen'
 import { Button } from '../shared/components/ui/Button'
 import { RegionBoundaryMap, type SelectedRegion } from './RegionBoundaryMap'
@@ -7,6 +7,8 @@ import { useAuth } from '../features/auth/application/useAuth'
 import { useGroups } from '../features/group/application/useGroups'
 import { GroupSettingsSheet } from '../features/group/presentation/GroupSettingsSheet'
 import { RegionExplorer } from '../features/visit/presentation/RegionExplorer'
+import { useCoinDemo } from '../features/wallet/application/useCoinDemo'
+import { WalletButton } from '../features/wallet/presentation/WalletButton'
 import { ScreenSwitch } from './ScreenSwitch'
 import styles from './Pages.module.css'
 
@@ -17,6 +19,20 @@ export function MapPage() {
   const navigate = useNavigate()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState<SelectedRegion | null>(null)
+  const [lastFocusKey, setLastFocusKey] = useState<string | null>(null)
+  const location = useLocation()
+  useCoinDemo(currentGroup)
+
+  // 코인 카드의 "동네 보러 가기"로 오면 그 동네의 대표 카드를 바로 연다.
+  const focusRegion = (location.state as { focusRegion?: SelectedRegion } | null)?.focusRegion
+  if (focusRegion && lastFocusKey !== location.key) {
+    setLastFocusKey(location.key)
+    setSelectedRegion(focusRegion)
+  }
+  useEffect(() => {
+    if (!focusRegion) return
+    navigate(location.pathname, { replace: true, state: null })
+  }, [focusRegion, location.pathname, navigate])
 
   if (!currentGroup) {
     if (isLoading) {
@@ -74,11 +90,12 @@ export function MapPage() {
             <path d="M6 9l6 6 6-6" />
           </svg>
         </Link>
-        <div className={styles.walletPill} aria-label={`그룹 지갑 ${currentGroup.walletBalance ?? 0}코인`}>
-          <span className={styles.walletDot} aria-hidden="true" />
-          {currentGroup.walletBalance ?? 0}
-          <span className={styles.walletSnap} aria-hidden="true" />
-        </div>
+        <WalletButton
+          key={currentGroup.groupId}
+          groupId={currentGroup.groupId}
+          groupName={currentGroup.name}
+          fallbackBalance={currentGroup.walletBalance}
+        />
       </div>
       <RegionBoundaryMap onSelectRegion={setSelectedRegion} />
 
