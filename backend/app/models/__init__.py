@@ -4,5 +4,17 @@ from app.models.group import Group, GroupDeletion, GroupMember
 from app.models.region import Region
 from app.models.user import User, UserSession
 from app.models.visit import Photo, Visit
+from app.models.wallet import CoinTransaction, Wallet
 
-__all__ = ["Group", "GroupDeletion", "GroupMember", "Photo", "Region", "User", "UserSession", "Visit"]
+__all__ = [
+    "CoinTransaction",
+    "Group",
+    "GroupDeletion",
+    "GroupMember",
+    "Photo",
+    "Region",
+    "User",
+    "UserSession",
+    "Visit",
+    "Wallet",
+]

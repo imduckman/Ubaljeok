@@ -14,10 +14,11 @@ from app.api.deps import CurrentUser, DbSession, ensure_group_member
 from app.core.config import settings
 from app.core.errors import AppError
 from app.models import Photo, Region, Visit
-from app.schemas.photo import PhotoOut, PhotoUploadResponse, UploadVisitOut
+from app.schemas.photo import PhotoOut, PhotoUploadResponse, SettlementOut, UploadVisitOut
 from app.services import storage
 from app.services.photo_processing import KST, UnsupportedImageError, process_upload
 from app.services.regions import RegionLookup, get_region_lookup
+from app.services.wallet import Settlement, settle_visit_reward, wallet_balance
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 
@@ -141,9 +142,13 @@ def upload_photo(
     visit_date = (processed.taken_at or now).astimezone(KST).date()
     visit, is_new_visit = _get_or_create_visit(db, group_id, region.id, visit_date)
     if eligible and not visit.reward_eligible:
-        # 수동 방문 → 보상 대상 전환은 한 번만 (코인 지급은 3주차 지갑 기능에서 연결)
+        # 방문이 보상 대상이 되는 순간 한 번만 정산한다 (수동 → 자격 전환 포함)
         visit.reward_eligible = True
         visit.eligible_at = now
+        db.flush()
+        settlement = settle_visit_reward(db, visit)
+    else:
+        settlement = Settlement(reward=0, toll_paid=0, balance=wallet_balance(db, group_id))
 
     relative = storage.save_photo(media_root, group_id, processed.jpeg_bytes)
     photo = Photo(
@@ -180,6 +185,11 @@ def upload_photo(
             visit_date=visit.visit_date,
             reward_eligible=visit.reward_eligible,
             is_new_visit=is_new_visit,
+        ),
+        settlement=SettlementOut(
+            reward=settlement.reward,
+            toll_paid=settlement.toll_paid,
+            balance=settlement.balance,
         ),
     )
 
