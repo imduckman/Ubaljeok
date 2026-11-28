@@ -314,7 +314,7 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
 - 같은 (그룹, 날짜, 동네)에 이미 방문이 있으면 그 방문에 사진만 추가 (`isNewVisit: false`)
 - 보상 대상이 아닌 방문(수동 등)에 보상 대상 사진이 추가되면 그때 **한 번만** `rewardEligible: true`로 바뀜
 - GPS 좌표는 응답으로 돌려주지 않음
-- `settlement`: 이번 업로드의 코인 정산. `reward`는 첫 방문 100 / 다른 날 재방문 10 / 그 외 0, `tollPaid`는 랜드마크 기능 전까지 0, `balance`는 정산 뒤 잔액 (지갑 절 참고)
+- `settlement`: 이번 업로드의 코인 정산. `reward`는 첫 방문 100 / 다른 날 재방문 10 / 그 외 0, `tollPaid`는 다른 그룹 랜드마크에서 낸 통행료(없으면 0), `balance`는 정산 뒤 잔액 (지갑·땅따먹기 절 참고)
 
 **Errors**
 
@@ -395,7 +395,7 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
   "nextCursor": null
 }
 ```
-- `type`: `first_visit` / `revisit` / `purchase` / `upgrade` / `toll_paid` / `toll_received` (지금은 앞의 두 개만 생김)
+- `type`: `first_visit` / `revisit` / `purchase` / `upgrade` / `toll_paid` / `toll_received`
 - `amount`: 들어오면 양수, 나가면 음수
 - 페이지: `limit` 기본 20, 최대 50. 다음 페이지는 `cursor=nextCursor`, 마지막은 `nextCursor: null`
 - **Errors**: `400 VALIDATION_ERROR`(잘못된 cursor·limit), `403 NOT_GROUP_MEMBER`, `404 NOT_FOUND`
@@ -406,6 +406,54 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
 - 방문이 보상 대상이 되는 순간 **한 번만** 정산 (수동 방문에 유효 사진이 추가될 때 포함). 같은 방문에 사진을 더 올리면 0
 - 잔액 변경과 거래 기록은 사진 저장과 같은 트랜잭션. 방문당 보상 1회는 원장 키(`reward:visit:{visitId}`) UNIQUE로 보장
 - 마이그레이션 `0004_wallets`가 기존 보상 대상 방문을 그룹·동네별 `eligible_at` 순으로 한 번 정산 (재실행해도 추가 지급 없음, 통행료 소급 없음)
+
+## 땅따먹기 ✅
+
+### 🔒 `GET /api/game/properties?groupId=`
+모든 그룹의 동네 소유권 (지도의 건물·랜드마크 아이콘은 전역 소유자를 표시). `groupId` 그룹의 멤버여야 조회 가능.
+```json
+{
+  "properties": [
+    { "regionCode": "4111156000", "ownerGroupId": 10, "ownerGroupName": "우발적", "level": "landmark" }
+  ]
+}
+```
+
+### 🔒 `POST /api/game/buildings/purchase` → 201
+### 🔒 `POST /api/game/buildings/upgrade` → 200
+**Request** (선택 헤더 `Idempotency-Key: <UUID>`)
+```json
+{ "groupId": 10, "regionCode": "4111156000" }
+```
+**Response**
+```json
+{
+  "property": { "regionCode": "4111156000", "ownerGroupId": 10, "ownerGroupName": "우발적", "level": "building" },
+  "walletBalance": 20,
+  "transactionId": 15
+}
+```
+- 구매: **그룹장**만, 그 동네에 **보상 대상 방문**이 있어야 함, **100코인**. 동네당 소유 그룹 하나
+- 업그레이드: 소유 그룹의 **그룹장**만, 건물 → 랜드마크 한 번, **80코인**
+- `Idempotency-Key`: 같은 키·같은 본문이면 처음 응답을 그대로 다시 줌(코인은 한 번만 차감). 같은 키에 다른 본문이면 409
+
+| 상황 | 응답 |
+| --- | --- |
+| 그룹장이 아님 | `403 NOT_GROUP_OWNER` |
+| 그룹 멤버가 아님 | `403 NOT_GROUP_MEMBER` |
+| 지원하지 않는 동네 | `422 UNKNOWN_REGION` |
+| 보상 대상 방문 없음 | `422 VISIT_REQUIRED` |
+| 이미 주인이 있음 (구매) | `409 REGION_ALREADY_OWNED` |
+| 우리 건물이 아님 / 이미 랜드마크 (업그레이드) | `409 BUILDING_NOT_OWNED` / `409 ALREADY_LANDMARK` |
+| 코인 부족 | `409 INSUFFICIENT_COINS` |
+| 같은 키에 다른 본문 | `409 IDEMPOTENCY_CONFLICT` |
+| 키가 UUID가 아님 | `400 VALIDATION_ERROR` |
+
+### 통행료
+- 다른 그룹의 **랜드마크** 동네에서 방문이 보상 대상이 될 때, 방금 받은 보상을 포함한 잔액에서 `min(잔액, 30)`을 소유 그룹으로 옮김
+- 자기 땅·일반 건물·수동 방문·같은 방문 재등록은 0. 지난 방문에는 소급하지 않음
+- 원장에 `toll_paid`(−)·`toll_received`(+) 두 줄이 같은 `transfer_id`로 남음
+- 소유 그룹이 삭제되면 그 동네는 주인 없음으로 돌아감
 
 ## 후속 계약
 

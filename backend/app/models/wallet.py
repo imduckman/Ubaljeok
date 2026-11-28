@@ -66,6 +66,11 @@ class CoinTransaction(Base):
         BigInteger, ForeignKey("visits.id", ondelete="CASCADE")
     )
     region_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("regions.id"))
+    # 통행료: 상대 그룹과, 같은 통행료의 낸 쪽·받은 쪽 두 줄을 묶는 ID
+    counterparty_group_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("groups.id", ondelete="SET NULL")
+    )
+    transfer_id: Mapped[str | None] = mapped_column(String(36))
     idempotency_key: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
