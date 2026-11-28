@@ -1,0 +1,217 @@
+.action {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 왼쪽: 사진 올리기, 오른쪽: 구매. 두 버튼은 같은 폭과 높이 */
+.row {
+  /* 글자 수와 상관없이 두 칸을 똑같은 폭으로 나눈다 */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+/* 땅 문서 카드 안처럼 버튼 하나만 있을 때: 한 줄 가득 */
+.rowSingle {
+  display: grid;
+}
+
+.row > *,
+.rowSingle > * {
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row > .actionButton,
+.actionButton {
+  height: 48px;
+  padding: 0 10px;
+  font-size: 16px;
+  white-space: nowrap;
+  gap: 7px;
+  font-weight: 800;
+}
+
+/* 누를 수 없을 때는 핑크를 빼서 '아직 못 산다'는 게 바로 보이게 */
+.actionButton:disabled {
+  background: var(--soft);
+  color: var(--ink-3);
+  box-shadow: var(--press) var(--line-strong);
+  opacity: 1;
+}
+
+/* 버튼 안 가격: 코인 + 숫자 (박스 없이) */
+.pricePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.actionButton:disabled .coinIcon {
+  background: var(--line-strong);
+  box-shadow: none;
+}
+
+.coinIcon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--coin);
+  box-shadow: inset 0 0 0 2px var(--coin-dark);
+}
+
+
+.blocked {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: var(--radius-tile);
+  background: var(--coin-light);
+}
+
+.confirmTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+/* 코인 계산 점수판: [지금] − [구매] = [남는 코인] */
+.calc {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1.2fr);
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.calcCell {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 4px 6px;
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: var(--press-small) var(--coin);
+}
+
+.calcLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--coin-text);
+}
+
+.calcValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 17px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.calcSign {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--coin-text);
+}
+
+/* 나가는 코인: 핑크 숫자, 동전이 한 번 톡 떨어진다 */
+.calcSpend .calcValue {
+  color: var(--us-dark);
+}
+
+.calcSpend .coinIcon {
+  animation: coinDrop 0.5s ease-out both;
+}
+
+/* 남는 코인: 금색 테두리로 가장 크게 */
+.calcResult {
+  border: 2px solid var(--coin);
+  box-shadow: var(--press) var(--coin-dark);
+  animation: resultPop 0.35s 0.35s ease-out both;
+}
+
+.calcResult .calcValue {
+  font-size: 20px;
+}
+
+@keyframes coinDrop {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  70% {
+    transform: translateY(2px);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes resultPop {
+  from {
+    transform: scale(0.85);
+  }
+  70% {
+    transform: scale(1.06);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calcSpend .coinIcon,
+  .calcResult {
+    animation: none;
+  }
+}
+
+.error {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--error-text);
+}
+
+.confirmRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* 취소·구매 버튼: 위의 사진 올리기·구매 버튼과 같은 높이 */
+.confirmRow > * {
+  height: 48px;
+  font-size: 16px;
+}
+
+.confirmRow > :first-child {
+  flex: 1;
+}
+
+.confirmRow > :last-child {
+  flex: 2;
+}

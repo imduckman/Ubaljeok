@@ -1,9 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import type { RegionDetailState } from '../application/useRegionDetail'
 import type { RegionDetail } from '../domain/RegionDetail'
-import { RegionDetailSheet } from './RegionDetailSheet'
+import { RegionDetailSheet, type RegionTab } from './RegionDetailSheet'
 
 const visited: RegionDetail = {
   region: { regionCode: '4111759000', name: '영통1동' },
@@ -14,10 +14,10 @@ const visited: RegionDetail = {
   ],
 }
 
-function renderSheet(state: RegionDetailState, onRetry = vi.fn()) {
+function renderSheet(state: RegionDetailState, onRetry = vi.fn(), tab: RegionTab = 'gallery', onTabChange = vi.fn()) {
   render(
     <MemoryRouter>
-      <RegionDetailSheet state={state} regionName="영통1동" onRetry={onRetry} onClose={vi.fn()} />
+      <RegionDetailSheet state={state} regionName="영통1동" tab={tab} onTabChange={onTabChange} onRetry={onRetry} onClose={vi.fn()} />
     </MemoryRouter>,
   )
   return onRetry
@@ -28,7 +28,8 @@ describe('RegionDetailSheet', () => {
     renderSheet({ status: 'ready', detail: visited, ownership: { status: 'unowned' } })
 
     expect(screen.getByText('우리 그룹 방문 2번')).toBeTruthy()
-    expect(screen.getByText('아직 주인이 없는 동네예요')).toBeTruthy()
+    expect(screen.getByRole('tab', { name: '갤러리', selected: true })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: '영통1동 건물 관리' })).toBeNull()
     expect(screen.getByRole('heading', { name: '11월 16일' })).toBeTruthy()
     expect(screen.getByText('코인 대상')).toBeTruthy()
     expect(screen.getByText('코인 제외')).toBeTruthy()
@@ -44,7 +45,20 @@ describe('RegionDetailSheet', () => {
 
     expect(screen.getByText('아직 이 동네 사진이 없어요. 첫 발자국을 남겨볼까요?')).toBeTruthy()
     expect(screen.getByRole('button', { name: '사진 올리기' })).toBeTruthy()
-    expect(screen.getByText('과동기 탐험대의 랜드마크')).toBeTruthy()
+  })
+
+  it('건물 관리 탭은 사진 대신 성장 길을 보여주고, 탭을 누르면 바꿔 달라고 알린다', () => {
+    const onTabChange = vi.fn()
+    renderSheet({ status: 'ready', detail: visited, ownership: { status: 'ours', level: 'landmark' } }, vi.fn(), 'building', onTabChange)
+
+    const shown = screen.getByRole('tabpanel')
+    expect(within(shown).getByRole('region', { name: '영통1동 건물 관리' })).toBeTruthy()
+    expect(within(shown).getByText('우리 랜드마크 완성!')).toBeTruthy()
+    expect(within(shown).getByText('우리 그룹 랜드마크')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: '11월 16일' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('tab', { name: '갤러리' }))
+    expect(onTabChange).toHaveBeenCalledWith('gallery')
   })
 
   it('불러오지 못하면 다시 불러오기를 누를 수 있다', () => {

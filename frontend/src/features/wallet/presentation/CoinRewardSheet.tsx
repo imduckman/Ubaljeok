@@ -56,7 +56,7 @@ export function CoinRewardSheet({ reward, onClose }: { reward: CoinReward; onClo
 
   const goToRegion = () => {
     onClose()
-    navigate('/map', { state: { focusRegion: { regionCode: reward.regionCode, name: reward.regionName } } })
+    navigate('/map', { state: { focusRegion: { regionCode: reward.regionCode, name: reward.regionName, sheet: 'building' } } })
   }
 
   return (
@@ -74,14 +74,14 @@ export function CoinRewardSheet({ reward, onClose }: { reward: CoinReward; onClo
           {reward.groupName} 지갑 <strong>{reward.balance}</strong>
           <span className={styles.gain}>({formatCoinChange(reward.amount)})</span>
         </p>
-        <p className={styles.rewardNote}>이제 {reward.regionName}에 건물을 살 수 있어요.</p>
+        <p className={styles.rewardNote}>이제 {reward.regionName}에 건물을 구매할 수 있어요.</p>
       </div>
       <div className={styles.rewardActions}>
         <Button variant="secondary" onClick={onClose}>
           나중에
         </Button>
         <Button variant="primary" onClick={goToRegion}>
-          동네 보러 가기
+          건물 구매하러 가기
         </Button>
       </div>
     </BottomSheet>

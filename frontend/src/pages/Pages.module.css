@@ -88,6 +88,11 @@
   flex-shrink: 0;
 }
 
+/* 지도 컨트롤(z-index 2)이 지도 밖 요소 위로 새지 않게 별도 층으로 묶는다 */
+.mapLayer {
+  isolation: isolate;
+}
+
 .mapFooter {
   display: flex;
   flex-direction: column;

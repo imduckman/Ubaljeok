@@ -7,10 +7,23 @@ import { ApiError } from '../../shared/types/api'
 import type { LoginRequest, SignupRequest, User } from '../../features/auth/domain/User'
 import type { CreateGroupRequest, Group, JoinGroupRequest } from '../../features/group/domain/Group'
 import { MAX_GROUP_MEMBERS, isGroupOwner, removeMember } from '../../features/group/domain/Group'
-import type { Wallet } from '../../features/wallet/domain/Wallet'
+import { TOLL_LIMIT, type Wallet, type WalletTransaction, type WalletTransactionType } from '../../features/wallet/domain/Wallet'
+import {
+  BUILDING_PRICE,
+  LANDMARK_UPGRADE_PRICE,
+  type Property,
+  type PropertyChangeResult,
+} from '../../features/game/domain/Property'
+import { getMockProperty, listMockProperties, setMockProperty } from './mockProperties'
+import { hasEligibleMockVisit } from './mockVisits'
 
 interface StoredUser extends User {
   password: string
+}
+
+/** 거래 한 건 + 어느 그룹 지갑의 기록인지 */
+interface StoredTransaction extends WalletTransaction {
+  groupId: number
 }
 
 interface MockDatabase {
@@ -18,6 +31,8 @@ interface MockDatabase {
   groups: Group[]
   sessionUserId: number | null
   nextId: number
+  /** 지갑 거래 내역. 예전에 저장된 데이터에는 없을 수 있어서 load()에서 채운다. */
+  transactions?: StoredTransaction[]
 }
 
 const STORAGE_KEY = 'ubaljeok-mock-v1'
@@ -56,13 +71,51 @@ function createSeed(): MockDatabase {
     ],
     sessionUserId: null,
     nextId: 200,
+    transactions: createSeedTransactions(),
   }
+}
+
+/** 처음 보여줄 영수증 예시. 밥친구들은 과동기 탐험대 랜드마크(행궁동)에서 통행료를 냈다. */
+function createSeedTransactions(): StoredTransaction[] {
+  const rows: [number, number, WalletTransactionType, number, string, string][] = [
+    [102, 1, 'first_visit', 100, '4111574000', '2026-11-06T13:10:00+09:00'],
+    [102, 2, 'first_visit', 100, '4111156000', '2026-11-07T15:40:00+09:00'],
+    [102, 3, 'purchase', -100, '4111156000', '2026-11-08T11:00:00+09:00'],
+    [102, 4, 'purchase', -100, '4111574000', '2026-11-09T18:20:00+09:00'],
+    [102, 5, 'upgrade', -80, '4111574000', '2026-11-10T19:05:00+09:00'],
+    [101, 6, 'first_visit', 100, '4111757000', '2026-11-16T14:20:00+09:00'],
+    [101, 7, 'first_visit', 100, '4111158000', '2026-11-18T12:30:00+09:00'],
+    [101, 8, 'revisit', 10, '4111757000', '2026-11-20T17:45:00+09:00'],
+    [101, 9, 'first_visit', 100, '4111574000', '2026-11-22T16:00:00+09:00'],
+    [101, 10, 'toll_paid', -30, '4111574000', '2026-11-22T16:00:01+09:00'],
+    [102, 11, 'toll_received', 30, '4111574000', '2026-11-22T16:00:01+09:00'],
+  ]
+  return rows.map(([groupId, id, type, amount, regionCode, createdAt]) => ({ groupId, id, type, amount, regionCode, createdAt }))
+}
+
+function addTransaction(
+  database: MockDatabase,
+  groupId: number,
+  type: WalletTransactionType,
+  amount: number,
+  regionCode: string | null,
+): number {
+  const id = database.nextId++
+  database.transactions = [
+    ...(database.transactions ?? []),
+    { groupId, id, type, amount, regionCode, createdAt: new Date().toISOString() },
+  ]
+  return id
 }
 
 function load(): MockDatabase {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) return JSON.parse(saved) as MockDatabase
+    if (saved) {
+      const database = JSON.parse(saved) as MockDatabase
+      database.transactions ??= createSeedTransactions()
+      return database
+    }
   } catch {
     // 저장소를 못 쓰는 환경이면 매번 새 데이터로 시작한다.
   }
@@ -212,23 +265,95 @@ export const mockServer = {
     save(database)
   },
 
-  /** 그룹 지갑. 가짜 서버는 거래 내역을 아직 만들지 않는다. */
+  /** 그룹 지갑: 잔액 + 거래 내역(최신순). 가짜 서버는 한 번에 다 돌려줘서 nextCursor가 없다. */
   async getWallet(groupId: number): Promise<Wallet> {
     await delay()
     const database = load()
     const user = requireSession(database)
     const group = findMyGroup(database, groupId, user.userId)
-    return { balance: group.walletBalance ?? 0, transactions: [], nextCursor: null }
+    const transactions = (database.transactions ?? [])
+      .filter((transaction) => transaction.groupId === groupId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id)
+      .map(({ id, type, amount, regionCode, createdAt }) => ({ id, type, amount, regionCode, createdAt }))
+    return { balance: group.walletBalance ?? 0, transactions, nextCursor: null }
   },
 
-  /** 개발용: 코인 연출 확인을 위해 지갑에 코인을 더하고 새 잔액을 돌려준다. */
-  addCoinsForDemo(groupId: number, amount: number): number {
+  /** 동네 소유 정보 (모든 그룹이 함께 쓰는 지도판). 그룹 멤버만 볼 수 있다. */
+  async listProperties(groupId: number): Promise<Property[]> {
+    await delay()
+    const database = load()
+    const user = requireSession(database)
+    findMyGroup(database, groupId, user.userId)
+    return listMockProperties()
+  },
+
+  /** 건물 구매: 그룹장, 보상 대상 방문, 주인 없음, 코인 100 이상 */
+  async purchaseBuilding(groupId: number, regionCode: string): Promise<PropertyChangeResult> {
+    await delay()
+    const database = load()
+    const user = requireSession(database)
+    const group = findMyGroup(database, groupId, user.userId)
+    if (!isGroupOwner(group, user.userId)) throw new ApiError(403, 'NOT_GROUP_OWNER', '그룹장만 건물을 구매할 수 있어요.')
+    if (!hasEligibleMockVisit(groupId, regionCode)) {
+      throw new ApiError(422, 'VISIT_REQUIRED', '위치 정보가 있는 사진으로 방문해야 건물을 구매할 수 있어요.')
+    }
+    if (getMockProperty(regionCode)) throw new ApiError(409, 'REGION_ALREADY_OWNED', '이미 주인이 있는 동네예요.')
+    if ((group.walletBalance ?? 0) < BUILDING_PRICE) throw new ApiError(409, 'INSUFFICIENT_COINS', '코인이 모자라요.')
+
+    group.walletBalance = (group.walletBalance ?? 0) - BUILDING_PRICE
+    const transactionId = addTransaction(database, groupId, 'purchase', -BUILDING_PRICE, regionCode)
+    save(database)
+    const property: Property = { regionCode, ownerGroupId: groupId, ownerGroupName: group.name, level: 'building' }
+    setMockProperty(property)
+    return { property, walletBalance: group.walletBalance, transactionId }
+  },
+
+  /** 랜드마크 구매: 우리 그룹 건물, 그룹장, 코인 80 이상 */
+  async upgradeBuilding(groupId: number, regionCode: string): Promise<PropertyChangeResult> {
+    await delay()
+    const database = load()
+    const user = requireSession(database)
+    const group = findMyGroup(database, groupId, user.userId)
+    if (!isGroupOwner(group, user.userId)) throw new ApiError(403, 'NOT_GROUP_OWNER', '그룹장만 랜드마크를 구매할 수 있어요.')
+    const current = getMockProperty(regionCode)
+    if (!current || current.ownerGroupId !== groupId) throw new ApiError(409, 'BUILDING_NOT_OWNED', '우리 그룹 건물이 아니에요.')
+    if (current.level === 'landmark') throw new ApiError(409, 'ALREADY_LANDMARK', '이미 랜드마크예요.')
+    if ((group.walletBalance ?? 0) < LANDMARK_UPGRADE_PRICE) throw new ApiError(409, 'INSUFFICIENT_COINS', '코인이 모자라요.')
+
+    group.walletBalance = (group.walletBalance ?? 0) - LANDMARK_UPGRADE_PRICE
+    const transactionId = addTransaction(database, groupId, 'upgrade', -LANDMARK_UPGRADE_PRICE, regionCode)
+    save(database)
+    const property: Property = { ...current, level: 'landmark' }
+    setMockProperty(property)
+    return { property, walletBalance: group.walletBalance, transactionId }
+  },
+
+  /**
+   * 개발용: 사진 업로드 정산을 흉내 낸다 (업로드 화면이 정산을 연결하기 전 확인용).
+   * 보상을 주고, 그 동네가 다른 그룹 랜드마크면 min(잔액, 30) 통행료를 주인 그룹에게 옮긴다.
+   * 영수증에도 같은 거래가 쌓인다.
+   */
+  settleVisitForDemo(groupId: number, regionCode: string, reward: number): { reward: number; tollPaid: number; balance: number } {
     const database = load()
     const group = database.groups.find((candidate) => candidate.groupId === groupId)
-    if (!group) return 0
-    group.walletBalance = Math.max((group.walletBalance ?? 0) + amount, 0)
+    if (!group) return { reward: 0, tollPaid: 0, balance: 0 }
+    group.walletBalance = (group.walletBalance ?? 0) + reward
+    addTransaction(database, groupId, reward >= 100 ? 'first_visit' : 'revisit', reward, regionCode)
+
+    let tollPaid = 0
+    const property = getMockProperty(regionCode)
+    if (property && property.level === 'landmark' && property.ownerGroupId !== groupId) {
+      tollPaid = Math.min(group.walletBalance, TOLL_LIMIT)
+      group.walletBalance -= tollPaid
+      addTransaction(database, groupId, 'toll_paid', -tollPaid, regionCode)
+      const owner = database.groups.find((candidate) => candidate.groupId === property.ownerGroupId)
+      if (owner) {
+        owner.walletBalance = (owner.walletBalance ?? 0) + tollPaid
+        addTransaction(database, owner.groupId, 'toll_received', tollPaid, regionCode)
+      }
+    }
     save(database)
-    return group.walletBalance
+    return { reward, tollPaid, balance: group.walletBalance }
   },
 
   /** 개발용: 가짜 데이터를 처음 상태로 되돌린다. */

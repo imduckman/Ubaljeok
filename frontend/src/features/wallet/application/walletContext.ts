@@ -23,6 +23,8 @@ export interface WalletContextValue {
    * 새 동네 첫 방문(+100)이면 큰 코인 카드까지. 업로드 화면에서 부른다.
    */
   announceSettlement: (announcement: SettlementAnnouncement) => void
+  /** 구매·업그레이드처럼 서버가 새 잔액을 알려줄 때: 지갑 숫자를 바꾸고 "(−100)"을 잠깐 보여준다. */
+  applyBalance: (groupId: number, balance: number, change: number) => void
 }
 
 export const WalletContext = createContext<WalletContextValue | null>(null)

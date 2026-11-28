@@ -1,37 +1,19 @@
 .card {
   position: relative;
+  padding: 14px 14px 14px 16px;
   border: 1.5px solid var(--line);
   border-radius: var(--radius-card);
   background: var(--paper);
   box-shadow: var(--float);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.body {
-  width: 100%;
-  min-height: 72px;
-  padding: 14px 52px 14px 16px;
+.header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  text-align: left;
-}
-
-.expand {
-  border: none;
-  border-radius: var(--radius-card);
-  background: none;
-  font-family: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-
-.expand:disabled {
-  cursor: default;
-}
-
-.expand:focus-visible {
-  outline: 3px solid var(--them);
-  outline-offset: 2px;
+  gap: 8px;
 }
 
 .texts {
@@ -44,6 +26,9 @@
 
 .name {
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 18px;
   font-weight: 800;
 }
@@ -82,34 +67,11 @@
   color: var(--them-dark);
 }
 
-.more {
-  flex: none;
-  display: flex;
-  align-items: center;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink-3);
-}
-
-.retry {
-  margin-left: auto;
-  min-height: 44px;
-  border: none;
-  background: none;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--us-dark);
-  cursor: pointer;
-}
-
 .close {
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  width: 40px;
-  height: 40px;
-  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  flex: none;
+  margin-right: -6px;
   border: none;
   border-radius: var(--radius-tile);
   background: none;
@@ -117,5 +79,137 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+}
+
+/* 최근 사진 미리보기: 정사각형 4칸. 사진을 누르면 갤러리, 4장이 넘으면 마지막 칸이 "+N" */
+.preview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.loadingTile,
+.blankTile {
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-tile);
+  background: var(--soft);
+}
+
+/* 사진이 4장보다 적을 때 4번째 칸: 사진 더 올리기 (정사각형 점선 칸) */
+.addTile {
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  padding: 0;
+  flex-direction: column;
+}
+
+.preview .addTile {
+  font-size: 12px;
+}
+
+.addTile,
+.emptyTile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--radius-tile);
+  background: var(--soft);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.addPlus {
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* 사진이 하나도 없는 동네: 사진 한 칸 높이쯤의 점선 칸 하나 */
+.emptyTile {
+  width: 100%;
+  height: 76px;
+}
+
+.addTile:focus-visible,
+.emptyTile:focus-visible {
+  outline: 3px solid var(--them);
+  outline-offset: 2px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  /* 버튼 아래 두께(4px)만큼 자리 확보 */
+  padding-bottom: 4px;
+}
+
+/* 보드게임 말판 버튼: 앱의 다른 핑크 버튼처럼 옅은 핑크 + 같은 계열 아래 두께. 누르면 눌린다 */
+.galleryButton,
+.buildingButton {
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--radius-button);
+  background: var(--us-light);
+  color: var(--us-dark);
+  box-shadow: var(--press) var(--us-light-edge);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.galleryButton svg,
+.buildingButton svg {
+  flex: none;
+  color: var(--us);
+}
+
+.galleryButton:active:not(:disabled),
+.buildingButton:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: var(--press-small) var(--us-light-edge);
+}
+
+/* 사진 없는 동네: 같은 모양의 회색 버튼, 누를 수 없다 */
+.galleryButton:disabled,
+.buildingButton:disabled {
+  background: var(--soft);
+  color: var(--ink-3);
+  box-shadow: var(--press) var(--line-strong);
+  cursor: default;
+}
+
+.galleryButton:disabled svg,
+.buildingButton:disabled svg {
+  color: var(--ink-3);
+}
+
+.galleryButton:focus-visible,
+.buildingButton:focus-visible,
+.close:focus-visible {
+  outline: 3px solid var(--them);
+  outline-offset: 2px;
+}
+
+.retry {
+  min-height: 44px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-button);
+  background: var(--paper);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--us-dark);
   cursor: pointer;
 }

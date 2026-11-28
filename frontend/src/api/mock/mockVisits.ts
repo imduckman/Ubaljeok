@@ -1,5 +1,5 @@
 import type { VisitMapResponse } from '../endpoints/visits'
-import type { RegionDetail, RegionOwnership, RegionPhoto, RegionVisit } from '../../features/visit/domain/RegionDetail'
+import type { RegionDetail, RegionPhoto, RegionVisit } from '../../features/visit/domain/RegionDetail'
 import { loadMockRegions } from './mockRegions'
 
 type MockVisit = {
@@ -35,6 +35,13 @@ export function recordMockVisit(
   return { id: visit.id, rewardEligible: visit.rewardEligible, isNewVisit: true }
 }
 
+/** 구매 조건: 이 그룹이 이 동네에 코인을 받을 수 있는(보상 대상) 방문을 했는지 */
+export function hasEligibleMockVisit(groupId: number, regionCode: string): boolean {
+  return [...visits.values()].some(
+    (visit) => visit.groupId === groupId && visit.regionCode === regionCode && visit.rewardEligible,
+  )
+}
+
 function visitLevel(count: number): 1 | 2 | 3 | 4 | 5 {
   if (count >= 10) return 5
   if (count >= 5) return 4
@@ -64,7 +71,7 @@ export function getMockVisitMap(groupId: number): VisitMapResponse {
 
 /**
  * 지도와 동네 상세가 업로드로 기록한 같은 방문·사진을 조회한다.
- * - 소유 상태는 주인 없음 / 우리 건물 / 우리 랜드마크 / 다른 그룹이 골고루 나온다
+ * 소유 정보는 mockProperties.ts에서 따로 관리한다.
  * 방문·사진은 메모리에서 관리하며 새로고침하면 초기화된다.
  */
 
@@ -72,12 +79,6 @@ const NETWORK_DELAY_MS = 400
 
 function delay(ms = NETWORK_DELAY_MS) {
   return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-function hash(text: string) {
-  let value = 0
-  for (const char of text) value = (value * 31 + char.charCodeAt(0)) >>> 0
-  return value
 }
 
 export const mockVisitServer = {
@@ -97,21 +98,5 @@ export const mockVisitServer = {
         photos: visit.photos.map((photo) => ({ ...photo })),
       }))
     return { region: { regionCode, name }, visitCount: regionVisits.length, visits: regionVisits }
-  },
-
-  async getRegionOwnership(groupId: number, regionCode: string): Promise<RegionOwnership> {
-    await delay(150)
-    // 방문하지 않은 동네는 우리 땅일 수 없다
-    const isVisited = [...visits.values()].some((visit) => visit.groupId === groupId && visit.regionCode === regionCode)
-    switch (hash(`${groupId}:${regionCode}:owner`) % 4) {
-      case 1:
-        return isVisited ? { status: 'ours', level: 'building' } : { status: 'unowned' }
-      case 2:
-        return isVisited ? { status: 'ours', level: 'landmark' } : { status: 'unowned' }
-      case 3:
-        return { status: 'theirs', ownerGroupName: '과동기 탐험대', level: hash(regionCode) % 2 ? 'landmark' : 'building' }
-      default:
-        return { status: 'unowned' }
-    }
   },
 }

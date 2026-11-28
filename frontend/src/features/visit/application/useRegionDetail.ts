@@ -40,7 +40,17 @@ export function useRegionDetail(groupId: number, regionCode: string) {
   }, [groupId, regionCode, attempt])
 
   const retry = useCallback(() => setAttempt((value) => value + 1), [])
-  return { state, retry }
+
+  /** 구매·업그레이드 직후: 서버가 돌려준 소유 상태로 바로 바꾼다 (다시 불러오지 않는다). */
+  const setOwnership = useCallback((ownership: RegionOwnership) => {
+    setResult((previous) =>
+      previous && previous.state.status === 'ready'
+        ? { ...previous, state: { ...previous.state, ownership } }
+        : previous,
+    )
+  }, [])
+
+  return { state, retry, setOwnership }
 }
 
 /** "우리 그룹 방문 3번" 같은 한 줄 요약 */
