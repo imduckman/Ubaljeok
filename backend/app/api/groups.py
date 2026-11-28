@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import CurrentUser, DbSession, GroupMembership, ensure_group_member
 from app.core.errors import AppError
 from app.core.security import new_invite_code
-from app.models import Group, GroupDeletion, GroupMember, Photo, User, Visit
+from app.models import Group, GroupDeletion, GroupMember, Photo, User, Visit, Wallet
 from app.services import storage
 from app.schemas.group import (
     GroupCreateRequest,
@@ -21,6 +21,7 @@ from app.schemas.group import (
     MemberOut,
     Role,
 )
+from app.services.wallet import wallet_balance
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 
@@ -58,6 +59,7 @@ def _group_out(db: Session, group: Group, my_role: Role) -> GroupOut:
         member_count=len(members),
         members=members,
         visited_region_count=visited_region_count or 0,
+        wallet_balance=wallet_balance(db, group.id),
     )
 
 
@@ -66,6 +68,8 @@ def create_group(body: GroupCreateRequest, user: CurrentUser, db: DbSession) -> 
     group = Group(name=body.name, invite_code=_unused_invite_code(db), owner_id=user.id)
     group.members.append(GroupMember(user_id=user.id, role="owner"))
     db.add(group)
+    db.flush()
+    db.add(Wallet(group_id=group.id, balance=0))
     db.commit()
     return GroupResponse(group=_group_out(db, group, "owner"))
 

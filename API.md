@@ -133,7 +133,8 @@
     { "userId": 1, "nickname": "승민", "role": "owner" },
     { "userId": 2, "nickname": "희재", "role": "member" }
   ],
-  "visitedRegionCount": 3
+  "visitedRegionCount": 3,
+  "walletBalance": 110
 }
 ```
 - `myRole`, `role`: `owner`(그룹장) / `member`
@@ -141,7 +142,7 @@
 - 초대 코드: **6자리 영문 대문자·숫자** (헷갈리는 `0 O 1 I` 제외), 유효 기간 없음
 - 그룹 최대 인원: **6명**
 - `visitedRegionCount`: 그룹이 한 번이라도 방문한 동네 수
-- 추가 예정: `walletBalance`(지갑 기능, 3주차). 추가 전까지 응답에 없음
+- `walletBalance`: 그룹 공동 지갑 잔액
 
 ### ★ 🔒 `POST /api/groups`
 그룹 생성 (만든 사람이 그룹장)
@@ -292,7 +293,8 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
     "visitDate": "2026-11-14",
     "rewardEligible": true,
     "isNewVisit": true
-  }
+  },
+  "settlement": { "reward": 100, "tollPaid": 0, "balance": 110 }
 }
 ```
 - `locationSource`: `exif`(사진 GPS로 판정) / `manual`(직접 선택)
@@ -312,7 +314,7 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
 - 같은 (그룹, 날짜, 동네)에 이미 방문이 있으면 그 방문에 사진만 추가 (`isNewVisit: false`)
 - 보상 대상이 아닌 방문(수동 등)에 보상 대상 사진이 추가되면 그때 **한 번만** `rewardEligible: true`로 바뀜
 - GPS 좌표는 응답으로 돌려주지 않음
-- 코인 지급 결과는 3주차(지갑·보상)에서 응답에 추가 예정
+- `settlement`: 이번 업로드의 코인 정산. `reward`는 첫 방문 100 / 다른 날 재방문 10 / 그 외 0, `tollPaid`는 다른 그룹 랜드마크에서 낸 통행료(없으면 0), `balance`는 정산 뒤 잔액 (지갑·땅따먹기 절 참고)
 
 **Errors**
 
@@ -376,6 +378,82 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
 - **Errors**: `403 NOT_GROUP_MEMBER`, `404 NOT_FOUND`(그룹 또는 동네 없음)
 
 ---
+
+## 지갑 ✅
+
+### 🔒 `GET /api/groups/{groupId}/wallet?cursor=&limit=`
+그룹 공동 지갑 잔액과 거래 내역 (최신순)
+
+**Response 200**
+```json
+{
+  "balance": 110,
+  "transactions": [
+    { "id": 2, "type": "revisit", "amount": 10, "regionCode": "4111156000", "createdAt": "2026-11-28T23:40:00+09:00" },
+    { "id": 1, "type": "first_visit", "amount": 100, "regionCode": "4111156000", "createdAt": "2026-11-27T15:20:00+09:00" }
+  ],
+  "nextCursor": null
+}
+```
+- `type`: `first_visit` / `revisit` / `purchase` / `upgrade` / `toll_paid` / `toll_received`
+- `amount`: 들어오면 양수, 나가면 음수
+- 페이지: `limit` 기본 20, 최대 50. 다음 페이지는 `cursor=nextCursor`, 마지막은 `nextCursor: null`
+- **Errors**: `400 VALIDATION_ERROR`(잘못된 cursor·limit), `403 NOT_GROUP_MEMBER`, `404 NOT_FOUND`
+
+### 보상 규칙
+- 지갑은 0에서 시작 (그룹 생성 시 자동 생성)
+- 같은 그룹·동네에서 처음 보상 대상이 된 방문 **+100**, 이후 다른 날의 보상 대상 방문 **+10**
+- 방문이 보상 대상이 되는 순간 **한 번만** 정산 (수동 방문에 유효 사진이 추가될 때 포함). 같은 방문에 사진을 더 올리면 0
+- 잔액 변경과 거래 기록은 사진 저장과 같은 트랜잭션. 방문당 보상 1회는 원장 키(`reward:visit:{visitId}`) UNIQUE로 보장
+- 마이그레이션 `0004_wallets`가 기존 보상 대상 방문을 그룹·동네별 `eligible_at` 순으로 한 번 정산 (재실행해도 추가 지급 없음, 통행료 소급 없음)
+
+## 땅따먹기 ✅
+
+### 🔒 `GET /api/game/properties?groupId=`
+모든 그룹의 동네 소유권 (지도의 건물·랜드마크 아이콘은 전역 소유자를 표시). `groupId` 그룹의 멤버여야 조회 가능.
+```json
+{
+  "properties": [
+    { "regionCode": "4111156000", "ownerGroupId": 10, "ownerGroupName": "우발적", "level": "landmark" }
+  ]
+}
+```
+
+### 🔒 `POST /api/game/buildings/purchase` → 201
+### 🔒 `POST /api/game/buildings/upgrade` → 200
+**Request** (선택 헤더 `Idempotency-Key: <UUID>`)
+```json
+{ "groupId": 10, "regionCode": "4111156000" }
+```
+**Response**
+```json
+{
+  "property": { "regionCode": "4111156000", "ownerGroupId": 10, "ownerGroupName": "우발적", "level": "building" },
+  "walletBalance": 20,
+  "transactionId": 15
+}
+```
+- 구매: **그룹장**만, 그 동네에 **보상 대상 방문**이 있어야 함, **100코인**. 동네당 소유 그룹 하나
+- 업그레이드: 소유 그룹의 **그룹장**만, 건물 → 랜드마크 한 번, **80코인**
+- `Idempotency-Key`: 같은 키·같은 본문이면 처음 응답을 그대로 다시 줌(코인은 한 번만 차감). 같은 키에 다른 본문이면 409
+
+| 상황 | 응답 |
+| --- | --- |
+| 그룹장이 아님 | `403 NOT_GROUP_OWNER` |
+| 그룹 멤버가 아님 | `403 NOT_GROUP_MEMBER` |
+| 지원하지 않는 동네 | `422 UNKNOWN_REGION` |
+| 보상 대상 방문 없음 | `422 VISIT_REQUIRED` |
+| 이미 주인이 있음 (구매) | `409 REGION_ALREADY_OWNED` |
+| 우리 건물이 아님 / 이미 랜드마크 (업그레이드) | `409 BUILDING_NOT_OWNED` / `409 ALREADY_LANDMARK` |
+| 코인 부족 | `409 INSUFFICIENT_COINS` |
+| 같은 키에 다른 본문 | `409 IDEMPOTENCY_CONFLICT` |
+| 키가 UUID가 아님 | `400 VALIDATION_ERROR` |
+
+### 통행료
+- 다른 그룹의 **랜드마크** 동네에서 방문이 보상 대상이 될 때, 방금 받은 보상을 포함한 잔액에서 `min(잔액, 30)`을 소유 그룹으로 옮김
+- 자기 땅·일반 건물·수동 방문·같은 방문 재등록은 0. 지난 방문에는 소급하지 않음
+- 원장에 `toll_paid`(−)·`toll_received`(+) 두 줄이 같은 `transfer_id`로 남음
+- 소유 그룹이 삭제되면 그 동네는 주인 없음으로 돌아감
 
 ## 후속 계약
 
