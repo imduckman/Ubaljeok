@@ -30,9 +30,16 @@ class UploadVisitOut(ApiModel):
     is_new_visit: bool
 
 
+class SettlementOut(ApiModel):
+    reward: int  # 받은 보상 (첫 방문 100, 다른 날 재방문 10, 없으면 0)
+    toll_paid: int  # 낸 통행료 (4주차 랜드마크 기능 전까지 항상 0)
+    balance: int  # 정산 뒤 그룹 지갑 잔액
+
+
 class PhotoUploadResponse(ApiModel):
     photo: PhotoOut
     visit: UploadVisitOut
+    settlement: SettlementOut
 
 
 class RegionVisitCount(ApiModel):

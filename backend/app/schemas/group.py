@@ -48,6 +48,7 @@ class GroupOut(ApiModel):
     member_count: int
     members: list[MemberOut]
     visited_region_count: int  # 이 그룹이 한 번이라도 방문한 동네 수
+    wallet_balance: int  # 그룹 공동 지갑 잔액
 
 
 class GroupResponse(ApiModel):
