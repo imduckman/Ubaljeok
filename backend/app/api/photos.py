@@ -49,14 +49,26 @@ def _resolve_region(
     lon: float | None,
     region_code: str | None,
 ) -> tuple[Region, str, str | None]:
-    """(동네, 위치 출처, 보상 제외 사유). GPS로 한 동네가 정해지면 그 동네가 우선이다."""
+    """(동네, 위치 출처, 보상 제외 사유). GPS로 한 동네가 정해지면 그 동네가 우선이다.
+
+    - GPS 후보 1개: 그 동네 (입력한 regionCode는 무시)
+    - GPS 후보 0개(수원 밖): 422 OUT_OF_SUPPORTED_AREA
+    - GPS 없음·후보 2개 이상: 직접 고른 동네로 기록, 보상 없음
+    """
     if lat is not None and lon is not None:
         candidates = lookup(db, lat, lon)
         if len(candidates) == 1:
             region = db.get(Region, candidates[0])
             if region is not None:
                 return region, "exif", None
-        reason = "out_of_area" if not candidates else "ambiguous_location"
+        if not candidates:
+            # 유효한 GPS가 수원시 밖: 직접 고른 동네가 있어도 저장·방문·보상 없이 거절한다
+            raise AppError(
+                422,
+                "OUT_OF_SUPPORTED_AREA",
+                "수원시 밖에서 찍은 사진은 올릴 수 없어요.",
+            )
+        reason = "ambiguous_location"
     else:
         reason = "no_gps"
 

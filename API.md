@@ -43,7 +43,7 @@
 | 409 | 중복·충돌 | `LOGIN_ID_TAKEN`, `ALREADY_MEMBER`, `GROUP_FULL`, `DUPLICATE_PHOTO` |
 | 413 | 파일이 너무 큼 | `FILE_TOO_LARGE` |
 | 415 | 지원하지 않는 형식 | `UNSUPPORTED_FORMAT` |
-| 422 | 처리할 수 없는 내용 | `REGION_REQUIRED`, `UNKNOWN_REGION` |
+| 422 | 처리할 수 없는 내용 | `REGION_REQUIRED`, `UNKNOWN_REGION`, `OUT_OF_SUPPORTED_AREA` |
 | 503 | 그룹 파일 정리 재시도 필요 | `GROUP_DELETE_INCOMPLETE` |
 
 ---
@@ -266,7 +266,7 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
 | `file` | O | JPEG 파일 |
 | `regionCode` | △ | 현재 동네를 자동으로 정할 수 없을 때 직접 고른 동네. GPS로 동네가 하나로 판정되면 무시 |
 
-**후속 변경** — 수원 밖으로 판정된 유효 GPS는 `regionCode`가 있어도 `422 OUT_OF_SUPPORTED_AREA`를 반환한다. GPS 없음·경계 후보 중복은 수동 기록을 유지한다. 코드·Mock·테스트를 같은 기능 PR에서 전환한다. [MVP 개발 명세](./docs/MVP-IMPLEMENTATION.md#3-사진지도)
+**수원 밖 사진** — 수원 밖으로 판정된 유효 GPS는 `regionCode`가 있어도 `422 OUT_OF_SUPPORTED_AREA`를 반환하고 저장·방문·보상을 하지 않는다. GPS 없음·경계 후보 중복은 수동 기록을 유지한다. [MVP 개발 명세](./docs/MVP-IMPLEMENTATION.md#3-사진지도)
 
 **처리 순서 (서버)**
 1. 그룹 멤버 확인 → JPEG·용량 확인
@@ -301,7 +301,6 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
 | 값 | 뜻 |
 | --- | --- |
 | `no_gps` | 사진에 위치 정보가 없음 (직접 고른 동네로 기록) |
-| `out_of_area` | 위치가 지원 지역(수원시) 밖 |
 | `ambiguous_location` | 동네 경계선 위라 동네를 하나로 정하지 못함 |
 | `no_taken_at` | 촬영 시각이 없음 |
 | `future_date` | 촬영 시각이 서버 접수 시각보다 10분 넘게 미래 |
@@ -321,7 +320,8 @@ MapLibre에서 쓰는 수원시 행정동 경계입니다. 응답은 `applicatio
 | 그룹 멤버 아님 | `403 NOT_GROUP_MEMBER` |
 | JPEG 아님 | `415 UNSUPPORTED_FORMAT` |
 | 15 MiB 초과 (`MAX_UPLOAD_MB`) | `413 FILE_TOO_LARGE` |
-| GPS로 동네를 못 정했는데 `regionCode`도 없음 | `422 REGION_REQUIRED` |
+| 유효한 GPS가 수원시 밖 (`regionCode`가 있어도 거절, 저장 안 함) | `422 OUT_OF_SUPPORTED_AREA` |
+| GPS 없음·경계선 위인데 `regionCode`도 없음 | `422 REGION_REQUIRED` |
 | `regionCode`가 지원하는 동네가 아님 | `422 UNKNOWN_REGION` |
 | 같은 그룹에 같은 사진 재업로드 | `409 DUPLICATE_PHOTO` |
 

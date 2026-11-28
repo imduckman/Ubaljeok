@@ -40,6 +40,8 @@ function toFailedState(error: unknown): Pick<UploadItem, 'status' | 'message' | 
         return { status: 'failed', message: '사진 용량이 너무 커요', retryable: false }
       case 'NOT_GROUP_MEMBER':
         return { status: 'failed', message: '이 그룹에 사진을 올릴 수 없어요', retryable: false }
+      case 'OUT_OF_SUPPORTED_AREA':
+        return { status: 'failed', message: '수원시 밖에서 찍은 사진은 올릴 수 없어요', retryable: false }
       case 'UNKNOWN_REGION':
         return { status: 'needsRegion', message: '지원하지 않는 동네예요. 다른 동네를 골라주세요.' }
     }

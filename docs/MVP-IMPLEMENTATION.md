@@ -37,7 +37,7 @@
 | 같은 그룹과 원본 해시의 중복 | `409 DUPLICATE_PHOTO`. 다른 그룹에는 같은 JPEG 사용 가능 |
 | 형식 불일치·손상 / 15 MiB 초과 | 각각 `415 UNSUPPORTED_FORMAT` / `413 FILE_TOO_LARGE` |
 
-- 현행 API는 수원 밖 사진에도 수동 코드를 받는다. 위 목표 동작은 서버·프론트·Mock·API 문서·테스트를 같은 기능 PR에서 전환한다. 기존 방문·사진은 이 변경에서 보존한다.
+- 수원 밖 사진의 `422 OUT_OF_SUPPORTED_AREA`는 서버·프론트 업로드 상태·Mock·API 문서·테스트에 반영했다. 기존 방문·사진은 보존한다.
 - `POST /api/photos`는 `groupId`, `file`, 필요할 때만 `regionCode`를 multipart로 받는다. 화면의 여러 장 선택은 장별 업로드로 보내고 실패한 장만 재시도한다. Nginx 기본 multipart 한도는 16 MiB다. 브라우저 EXIF는 미리보기, 서버 EXIF·PostGIS 결과는 최종 판정이다.
 - 서버는 EXIF 회전을 반영하여 정제 JPEG만 저장한다. DB·응답·로그에는 GPS 원좌표를 두지 않는다. 파일 저장 실패 시 DB 작업을 되돌리고 DB 커밋 실패 시 새 파일을 정리한다.
 - 방문 키는 그룹·KST 촬영일·동네다. 촬영 시각이 없으면 KST 업로드일을 기록한다. 오프셋이 없으면 KST로 해석한다. 보상 자격은 서버 접수 기준 30일 전부터 기기 시계 오차 +10분까지(양끝 포함)이며, 유효 GPS 후보가 하나여야 한다. 나머지 시간 사유는 `no_taken_at`, `future_date`, `older_than_30_days`를 사용한다.

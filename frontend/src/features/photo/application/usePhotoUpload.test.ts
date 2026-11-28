@@ -48,3 +48,16 @@ it('일시 오류 뒤 다시 올릴 때 직접 고른 동네 코드를 유지한
   expect(upload).toHaveBeenCalledTimes(3)
   expect(upload.mock.calls[2][0].regionCode).toBe('4111573000')
 })
+
+it('수원 밖 사진은 동네 선택 없이 실패로 끝나고 다시 올리기를 제시하지 않는다', async () => {
+  upload.mockRejectedValueOnce(new ApiError(422, 'OUT_OF_SUPPORTED_AREA', '수원시 밖이에요'))
+  const { result } = renderHook(() => usePhotoUpload(101))
+  act(() => result.current.addFiles([jpeg('busan.jpg')]))
+  await act(() => result.current.startUpload())
+
+  expect(result.current.items[0]).toMatchObject({
+    status: 'failed',
+    message: '수원시 밖에서 찍은 사진은 올릴 수 없어요',
+    retryable: false,
+  })
+})

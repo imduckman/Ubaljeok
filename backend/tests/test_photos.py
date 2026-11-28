@@ -181,20 +181,29 @@ def test_manual_visit_becomes_eligible_once(member: tuple[TestClient, int]) -> N
     assert with_gps["visit"]["rewardEligible"] is True
 
 
-@pytest.mark.parametrize(
-    ("gps", "reason"),
-    [(GPS_BUSAN, "out_of_area"), (GPS_BORDER, "ambiguous_location")],
-)
-def test_gps_without_single_region_falls_back_to_manual(
-    member: tuple[TestClient, int], gps: tuple[float, float], reason: str
-) -> None:
+def test_border_gps_falls_back_to_manual(member: tuple[TestClient, int]) -> None:
     client, group_id = member
-    data = make_jpeg(gps, recent())
+    data = make_jpeg(GPS_BORDER, recent())
     assert upload(client, group_id, data).json()["error"]["code"] == "REGION_REQUIRED"
 
     body = upload(client, group_id, data, region_code=PAJANG).json()
     assert body["photo"]["locationSource"] == "manual"
-    assert body["photo"]["ineligibleReason"] == reason
+    assert body["photo"]["ineligibleReason"] == "ambiguous_location"
+
+
+def test_gps_outside_suwon_is_rejected_even_with_manual_region(
+    member: tuple[TestClient, int],
+) -> None:
+    client, group_id = member
+    data = make_jpeg(GPS_BUSAN, recent())
+    for region_code in (None, PAJANG):
+        res = upload(client, group_id, data, region_code=region_code)
+        assert res.status_code == 422
+        assert res.json()["error"]["code"] == "OUT_OF_SUPPORTED_AREA"
+
+    # 저장·방문 없이 끝났으므로 같은 사진이 중복으로 막히지 않고, 지도에도 없다
+    assert client.get("/visits/map", params={"groupId": group_id}).json()["regions"] == []
+    assert upload(client, group_id, data).json()["error"]["code"] == "OUT_OF_SUPPORTED_AREA"
 
 
 @pytest.mark.parametrize(
