@@ -119,3 +119,88 @@
   box-shadow: none;
   transform: none;
 }
+
+/* 갤러리 / 건물 관리 탭: 글자 아래 밑줄(인디케이터)로 지금 탭을 보여준다 */
+.tabBar {
+  display: flex;
+  margin-bottom: 14px;
+  border-bottom: 1.5px solid var(--line);
+}
+
+.tab {
+  position: relative;
+  flex: 1;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.tabActive {
+  color: var(--ink);
+  font-weight: 800;
+  cursor: default;
+}
+
+.tabActive::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: -1.5px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--us);
+}
+
+.tab:focus-visible {
+  outline: 3px solid var(--them);
+  outline-offset: -3px;
+  border-radius: var(--radius-tile);
+}
+
+/* 두 탭 내용을 같은 칸에 겹친다 → 시트 높이는 둘 중 큰 쪽(보통 건물 관리)에 맞춰 고정 */
+.panels {
+  display: grid;
+}
+
+.panel {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.panelHidden {
+  visibility: hidden;
+}
+
+/* 갤러리 탭: 내용이 짧아도 사진 올리기는 칸 맨 아래로 */
+.panel_gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel_building {
+  min-width: 0;
+}
+
+/* 사진 올리기 고정 줄: 시트를 스크롤해도 화면 맨 아래에 붙어 있다.
+   시트 안쪽 여백(좌우 20px, 아래 34px)까지 덮어서 사진이 버튼 뒤로 비치지 않게 한다 */
+.stickyFooter {
+  position: sticky;
+  bottom: -34px;
+  z-index: 1;
+  margin: auto -20px -34px;
+  padding: 12px 20px 34px;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.stickyFooter > * {
+  width: 100%;
+}

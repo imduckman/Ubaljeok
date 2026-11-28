@@ -8,6 +8,14 @@ import type { LoginRequest, SignupRequest, User } from '../../features/auth/doma
 import type { CreateGroupRequest, Group, JoinGroupRequest } from '../../features/group/domain/Group'
 import { MAX_GROUP_MEMBERS, isGroupOwner, removeMember } from '../../features/group/domain/Group'
 import type { Wallet } from '../../features/wallet/domain/Wallet'
+import {
+  BUILDING_PRICE,
+  LANDMARK_UPGRADE_PRICE,
+  type Property,
+  type PropertyChangeResult,
+} from '../../features/game/domain/Property'
+import { getMockProperty, listMockProperties, setMockProperty } from './mockProperties'
+import { hasEligibleMockVisit } from './mockVisits'
 
 interface StoredUser extends User {
   password: string
@@ -219,6 +227,54 @@ export const mockServer = {
     const user = requireSession(database)
     const group = findMyGroup(database, groupId, user.userId)
     return { balance: group.walletBalance ?? 0, transactions: [], nextCursor: null }
+  },
+
+  /** 동네 소유 정보 (모든 그룹이 함께 쓰는 지도판). 그룹 멤버만 볼 수 있다. */
+  async listProperties(groupId: number): Promise<Property[]> {
+    await delay()
+    const database = load()
+    const user = requireSession(database)
+    findMyGroup(database, groupId, user.userId)
+    return listMockProperties()
+  },
+
+  /** 건물 구매: 그룹장, 보상 대상 방문, 주인 없음, 코인 100 이상 */
+  async purchaseBuilding(groupId: number, regionCode: string): Promise<PropertyChangeResult> {
+    await delay()
+    const database = load()
+    const user = requireSession(database)
+    const group = findMyGroup(database, groupId, user.userId)
+    if (!isGroupOwner(group, user.userId)) throw new ApiError(403, 'NOT_GROUP_OWNER', '그룹장만 건물을 구매할 수 있어요.')
+    if (!hasEligibleMockVisit(groupId, regionCode)) {
+      throw new ApiError(422, 'VISIT_REQUIRED', '위치 정보가 있는 사진으로 방문해야 건물을 구매할 수 있어요.')
+    }
+    if (getMockProperty(regionCode)) throw new ApiError(409, 'REGION_ALREADY_OWNED', '이미 주인이 있는 동네예요.')
+    if ((group.walletBalance ?? 0) < BUILDING_PRICE) throw new ApiError(409, 'INSUFFICIENT_COINS', '코인이 모자라요.')
+
+    group.walletBalance = (group.walletBalance ?? 0) - BUILDING_PRICE
+    save(database)
+    const property: Property = { regionCode, ownerGroupId: groupId, ownerGroupName: group.name, level: 'building' }
+    setMockProperty(property)
+    return { property, walletBalance: group.walletBalance, transactionId: database.nextId }
+  },
+
+  /** 랜드마크 구매: 우리 그룹 건물, 그룹장, 코인 80 이상 */
+  async upgradeBuilding(groupId: number, regionCode: string): Promise<PropertyChangeResult> {
+    await delay()
+    const database = load()
+    const user = requireSession(database)
+    const group = findMyGroup(database, groupId, user.userId)
+    if (!isGroupOwner(group, user.userId)) throw new ApiError(403, 'NOT_GROUP_OWNER', '그룹장만 랜드마크를 구매할 수 있어요.')
+    const current = getMockProperty(regionCode)
+    if (!current || current.ownerGroupId !== groupId) throw new ApiError(409, 'BUILDING_NOT_OWNED', '우리 그룹 건물이 아니에요.')
+    if (current.level === 'landmark') throw new ApiError(409, 'ALREADY_LANDMARK', '이미 랜드마크예요.')
+    if ((group.walletBalance ?? 0) < LANDMARK_UPGRADE_PRICE) throw new ApiError(409, 'INSUFFICIENT_COINS', '코인이 모자라요.')
+
+    group.walletBalance = (group.walletBalance ?? 0) - LANDMARK_UPGRADE_PRICE
+    save(database)
+    const property: Property = { ...current, level: 'landmark' }
+    setMockProperty(property)
+    return { property, walletBalance: group.walletBalance, transactionId: database.nextId }
   },
 
   /** 개발용: 코인 연출 확인을 위해 지갑에 코인을 더하고 새 잔액을 돌려준다. */
