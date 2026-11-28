@@ -70,14 +70,24 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [showChange, showToast],
   )
 
+  const applyBalance = useCallback(
+    (groupId: number, balance: number, change: number) => {
+      balanceVersions.current.set(groupId, (balanceVersions.current.get(groupId) ?? 0) + 1)
+      setBalances((previous) => ({ ...previous, [groupId]: balance }))
+      setLoadStates((previous) => ({ ...previous, [groupId]: { isLoading: false, errorMessage: null } }))
+      if (change !== 0) showChange(groupId, change)
+    },
+    [showChange],
+  )
+
   useEffect(() => {
     const timers = changeTimers.current
     return () => timers.forEach((timer) => window.clearTimeout(timer))
   }, [])
 
   const value = useMemo<WalletContextValue>(
-    () => ({ balances, loadStates, recentChanges, loadWallet, announceSettlement }),
-    [balances, loadStates, recentChanges, loadWallet, announceSettlement],
+    () => ({ balances, loadStates, recentChanges, loadWallet, announceSettlement, applyBalance }),
+    [balances, loadStates, recentChanges, loadWallet, announceSettlement, applyBalance],
   )
 
   return (

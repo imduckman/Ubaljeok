@@ -1,4 +1,4 @@
-import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../../shared/types/api'
@@ -61,18 +61,32 @@ describe('RegionExplorer', () => {
     expect(result.current.state).toMatchObject({ status: 'ready', detail: { region: { name: '파장동' } } })
   })
 
-  it('먼저 대표 카드만 보여주고, 누르면 세부 시트를 펼친다', async () => {
+  it('대표 카드의 [갤러리]·[건물 관리]가 상세 시트를 그 탭으로 열고, 시트 안 탭으로 바꿀 수 있다', async () => {
     detailApi.mockResolvedValue(visited)
     ownershipApi.mockResolvedValue({ status: 'ours', level: 'landmark' })
     renderExplorer()
 
-    expect(await screen.findByText('우리 그룹 방문 3번')).toBeTruthy()
+    expect(await screen.findByText(/우리 그룹 방문 3번/)).toBeTruthy()
     expect(screen.getByText('우리 랜드마크')).toBeTruthy()
+    expect(screen.getAllByRole('img').length).toBeGreaterThan(0)
     expect(screen.queryByRole('dialog')).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: '영통1동 자세히 보기' }))
-    expect(screen.getByRole('dialog', { name: '영통1동' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: '11월 16일' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '갤러리' }))
+    const sheet = screen.getByRole('dialog', { name: '영통1동' })
+    expect(within(sheet).getByRole('tab', { name: '갤러리', selected: true })).toBeTruthy()
+    expect(within(within(sheet).getByRole('tabpanel')).getByRole('heading', { name: '11월 16일' })).toBeTruthy()
+    expect(within(sheet).queryByRole('region', { name: '영통1동 건물 관리' })).toBeNull()
+
+    fireEvent.click(within(sheet).getByRole('tab', { name: '건물 관리' }))
+    const buildingPanel = within(sheet).getByRole('tabpanel')
+    expect(within(buildingPanel).getByRole('region', { name: '영통1동 건물 관리' })).toBeTruthy()
+    expect(within(buildingPanel).getByText('우리 그룹 랜드마크')).toBeTruthy()
+    expect(within(sheet).queryByRole('heading', { name: '11월 16일' })).toBeNull()
+
+    fireEvent.click(within(sheet).getByRole('button', { name: '닫기' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '건물 관리' }))
+    expect(within(screen.getByRole('dialog', { name: '영통1동' })).getByRole('tab', { name: '건물 관리', selected: true })).toBeTruthy()
   })
 
   it('세부 시트를 닫으면 대표 카드로 돌아가고, 카드의 닫기는 선택을 끝낸다', async () => {
@@ -80,10 +94,11 @@ describe('RegionExplorer', () => {
     ownershipApi.mockResolvedValue({ status: 'unowned' })
     const onClose = renderExplorer()
 
-    fireEvent.click(await screen.findByRole('button', { name: '영통1동 자세히 보기' }))
+    await screen.findByText(/우리 그룹 방문 3번/)
+    fireEvent.click(screen.getByRole('button', { name: '갤러리' }))
     fireEvent.click(screen.getAllByRole('button', { name: '닫기' }).at(-1)!)
     expect(screen.queryByRole('dialog')).toBeNull()
-    expect(screen.getByText('우리 그룹 방문 3번')).toBeTruthy()
+    expect(screen.getByText(/우리 그룹 방문 3번/)).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: '닫기' }))
     expect(onClose).toHaveBeenCalledTimes(1)
@@ -96,6 +111,6 @@ describe('RegionExplorer', () => {
     renderExplorer()
 
     fireEvent.click(await screen.findByRole('button', { name: '다시 불러오기' }))
-    expect(await screen.findByText('우리 그룹 방문 3번')).toBeTruthy()
+    expect(await screen.findByText(/우리 그룹 방문 3번/)).toBeTruthy()
   })
 })

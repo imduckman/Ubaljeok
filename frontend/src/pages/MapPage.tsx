@@ -6,7 +6,7 @@ import { RegionBoundaryMap, type SelectedRegion } from './RegionBoundaryMap'
 import { useAuth } from '../features/auth/application/useAuth'
 import { useGroups } from '../features/group/application/useGroups'
 import { GroupSettingsSheet } from '../features/group/presentation/GroupSettingsSheet'
-import { RegionExplorer } from '../features/visit/presentation/RegionExplorer'
+import { RegionExplorer, type RegionSheet } from '../features/visit/presentation/RegionExplorer'
 import { useCoinDemo } from '../features/wallet/application/useCoinDemo'
 import { WalletButton } from '../features/wallet/presentation/WalletButton'
 import { ScreenSwitch } from './ScreenSwitch'
@@ -20,14 +20,21 @@ export function MapPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState<SelectedRegion | null>(null)
   const [lastFocusKey, setLastFocusKey] = useState<string | null>(null)
+  const [initialSheet, setInitialSheet] = useState<RegionSheet | null>(null)
   const location = useLocation()
   useCoinDemo(currentGroup)
 
-  // 코인 카드의 "동네 보러 가기"로 오면 그 동네의 대표 카드를 바로 연다.
-  const focusRegion = (location.state as { focusRegion?: SelectedRegion } | null)?.focusRegion
+  // 코인 카드의 "건물 구매하러 가기"로 오면 그 동네를 열고, 시트가 정해져 있으면 그 시트까지 바로 연다.
+  const focusRegion = (location.state as { focusRegion?: SelectedRegion & { sheet?: RegionSheet } } | null)?.focusRegion
   if (focusRegion && lastFocusKey !== location.key) {
     setLastFocusKey(location.key)
-    setSelectedRegion(focusRegion)
+    setSelectedRegion({ regionCode: focusRegion.regionCode, name: focusRegion.name })
+    setInitialSheet(focusRegion.sheet ?? null)
+  }
+  // 지도에서 직접 동네를 누르면 대표 카드부터 보여준다.
+  const selectRegion = (region: SelectedRegion) => {
+    setSelectedRegion(region)
+    setInitialSheet(null)
   }
   useEffect(() => {
     if (!focusRegion) return
@@ -55,6 +62,7 @@ export function MapPage() {
           groupId={currentGroup.groupId}
           regionCode={selectedRegion.regionCode}
           regionName={selectedRegion.name}
+          initialSheet={initialSheet}
           onClose={() => setSelectedRegion(null)}
         />
       ) : null}
@@ -97,11 +105,14 @@ export function MapPage() {
           fallbackBalance={currentGroup.walletBalance}
         />
       </div>
-      <RegionBoundaryMap
-        key={currentGroup.groupId}
-        groupId={currentGroup.groupId}
-        onSelectRegion={setSelectedRegion}
-      />
+      {/* 지도의 출처 표시·버튼이 아래 고정 영역(동네 카드·사진 올리기) 위로 올라오지 않게 지도 안에 가둔다 */}
+      <div className={styles.mapLayer}>
+        <RegionBoundaryMap
+          key={currentGroup.groupId}
+          groupId={currentGroup.groupId}
+          onSelectRegion={selectRegion}
+        />
+      </div>
 
       <GroupSettingsSheet
         key={currentGroup.groupId}

@@ -1,6 +1,8 @@
 import { request, USE_MOCK_API } from '../client'
 import { getMockVisitMap } from '../mock/mockVisits'
 import { mockVisitServer } from '../mock/mockVisits'
+import { listProperties } from './game'
+import { toOwnership } from '../../features/game/domain/Property'
 import type { RegionDetail, RegionOwnership } from '../../features/visit/domain/RegionDetail'
 
 export type VisitMapResponse = {
@@ -33,11 +35,8 @@ export async function getRegionDetail(groupId: number, regionCode: string, signa
   return request<RegionDetail>(`/visits/regions/${encodeURIComponent(regionCode)}?groupId=${groupId}`, { signal })
 }
 
-/**
- * 동네 소유 상태. 소유 정보 API(MVP 문서 `GET /api/game/properties`)는 4주차에 연결한다.
- * 그 전까지 실제 서버에서는 늘 '주인 없음'이고, 가짜 API에서만 여러 상태를 보여준다.
- */
+/** 동네 소유 상태 (우리 그룹 기준). 소유 정보 API에서 그 동네를 찾아 바꾼다. */
 export async function getRegionOwnership(groupId: number, regionCode: string): Promise<RegionOwnership> {
-  if (USE_MOCK_API) return mockVisitServer.getRegionOwnership(groupId, regionCode)
-  return { status: 'unowned' }
+  const properties = await listProperties(groupId)
+  return toOwnership(properties.find((property) => property.regionCode === regionCode), groupId)
 }

@@ -1,5 +1,6 @@
 import { Marker, type Map as MapLibreMap } from 'maplibre-gl'
 import type { GeoJSON, Geometry, Position } from 'geojson'
+import { PROPERTIES_CHANGED_EVENT } from '../api/endpoints/game'
 import { getRegionOwnership } from '../api/endpoints/visits'
 import styles from './mapBuildingMarkers.module.css'
 
@@ -101,9 +102,22 @@ export function mountBuildingMarkers(
     for (const marker of markers) marker.remove()
     markers.length = 0
   }
-  signal.addEventListener('abort', cleanup, { once: true })
+  // 건물이나 랜드마크를 구매하면 아이콘을 다시 불러온다. 늦게 끝난 이전 불러오기는 버린다.
+  let loadId = 0
+  const reload = () => {
+    if (signal.aborted) return
+    void load().catch(() => {
+      if (!signal.aborted) onLoadError()
+    })
+  }
+  window.addEventListener(PROPERTIES_CHANGED_EVENT, reload)
+  signal.addEventListener('abort', () => {
+    window.removeEventListener(PROPERTIES_CHANGED_EVENT, reload)
+    cleanup()
+  }, { once: true })
 
   const load = async () => {
+    const id = ++loadId
     const results = await Promise.allSettled(
       [...candidates.values()].map(async (region) => ({
         region,
@@ -111,7 +125,8 @@ export function mountBuildingMarkers(
       })),
     )
 
-    if (signal.aborted) return
+    if (signal.aborted || id !== loadId) return
+    cleanup()
 
     let hasFailure = false
     for (const result of results) {
@@ -147,7 +162,5 @@ export function mountBuildingMarkers(
     if (hasFailure) onLoadError()
   }
 
-  void load().catch(() => {
-    if (!signal.aborted) onLoadError()
-  })
+  reload()
 }
