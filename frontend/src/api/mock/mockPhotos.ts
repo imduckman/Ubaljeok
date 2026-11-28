@@ -56,6 +56,9 @@ export const mockPhotoServer = {
     const regions = await loadMockRegions()
     signal?.throwIfAborted()
     const hasGps = !name.includes('nogps')
+    if (hasGps && name.includes('outside')) {
+      throw new ApiError(422, 'OUT_OF_SUPPORTED_AREA', '수원시 밖에서 찍은 사진은 올릴 수 없어요.')
+    }
     if (!hasGps && !regionCode) {
       throw new ApiError(422, 'REGION_REQUIRED', '사진에 위치 정보가 없어요. 동네를 골라주세요.')
     }
