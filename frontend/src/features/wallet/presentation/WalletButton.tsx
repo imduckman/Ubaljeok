@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useWallet } from '../application/useWallet'
+import { useWalletHistory } from '../application/useWalletHistory'
 import { formatCoinChange } from '../domain/Wallet'
 import { WalletSheet } from './WalletSheet'
 import styles from '../../../pages/Pages.module.css'
@@ -8,6 +9,7 @@ import styles from '../../../pages/Pages.module.css'
 export function WalletButton({ groupId, groupName, fallbackBalance }: { groupId: number; groupName: string; fallbackBalance?: number }) {
   const { balance, recentChange, isLoading, errorMessage, retry } = useWallet(groupId, fallbackBalance)
   const [isOpen, setIsOpen] = useState(false)
+  const history = useWalletHistory(groupId, isOpen)
   const balanceLabel = balance === undefined ? (isLoading ? '불러오는 중' : '확인 필요') : `${balance}코인`
 
   return (
@@ -32,6 +34,9 @@ export function WalletButton({ groupId, groupName, fallbackBalance }: { groupId:
         groupName={groupName}
         balance={balance}
         recentChange={recentChange}
+        history={history.state}
+        regionNameOf={history.regionNameOf}
+        onRetryHistory={history.retry}
         isLoading={isLoading}
         errorMessage={errorMessage}
         onRetry={() => void retry()}

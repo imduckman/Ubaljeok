@@ -1,6 +1,8 @@
 import { BottomSheet } from '../../../shared/components/ui/BottomSheet'
 import { Button } from '../../../shared/components/ui/Button'
+import type { WalletHistoryState } from '../application/useWalletHistory'
 import { formatCoinChange } from '../domain/Wallet'
+import { WalletReceipt } from './WalletReceipt'
 import styles from './WalletSheet.module.css'
 
 interface WalletSheetProps {
@@ -11,15 +13,30 @@ interface WalletSheetProps {
   onRetry: () => void
   /** 방금 바뀐 양. 0이면 표시하지 않는다. */
   recentChange?: number
+  /** 영수증(거래 내역). 없으면 빈 영수증 안내만 보여준다. */
+  history?: WalletHistoryState
+  regionNameOf?: (regionCode: string | null) => string
+  onRetryHistory?: () => void
   isOpen: boolean
   onClose: () => void
 }
 
 /**
- * 지갑 버튼을 누르면 여는 시트. 위에 그룹 카드(잔액), 아래 주머니에 영수증이 들어간다.
- * 거래 내역(영수증)은 4주차에 채운다.
+ * 지갑 버튼을 누르면 여는 시트. 위에 그룹 카드(잔액), 아래 주머니에 영수증(거래 내역)이 들어간다.
  */
-export function WalletSheet({ groupName, balance, recentChange = 0, isLoading, errorMessage, onRetry, isOpen, onClose }: WalletSheetProps) {
+export function WalletSheet({
+  groupName,
+  balance,
+  recentChange = 0,
+  isLoading,
+  errorMessage,
+  onRetry,
+  history = { status: 'ready', transactions: [], balance: 0, hasMore: false },
+  regionNameOf = () => '',
+  onRetryHistory = () => {},
+  isOpen,
+  onClose,
+}: WalletSheetProps) {
   const unknownBalanceLabel = isLoading ? '잔액을 불러오는 중이에요' : '잔액 확인이 필요해요'
   return (
     <BottomSheet
@@ -48,7 +65,7 @@ export function WalletSheet({ groupName, balance, recentChange = 0, isLoading, e
       <section className={styles.receiptPocket} aria-label="영수증">
         <p className={styles.pocketLabel}>영수증</p>
         <div className={styles.receipt}>
-          <p className={styles.receiptEmpty}>코인을 받거나 쓰면 영수증이 여기에 쌓여요.</p>
+          <WalletReceipt state={history} regionNameOf={regionNameOf} onRetry={onRetryHistory} />
           <p className={styles.receiptNote}>위치 정보가 없거나 30일이 지난 사진은 지도에만 남고 코인은 받을 수 없어요.</p>
         </div>
       </section>

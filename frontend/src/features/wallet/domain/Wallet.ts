@@ -32,6 +32,54 @@ export interface Settlement {
 
 export const FIRST_VISIT_REWARD = 100
 export const REVISIT_REWARD = 10
+/** 다른 그룹 랜드마크에서 내는 통행료 최대치 (잔액이 적으면 잔액만큼) */
+export const TOLL_LIMIT = 30
+
+/** 영수증 한 줄의 이름 */
+export const TRANSACTION_LABELS: Record<WalletTransactionType, string> = {
+  first_visit: '처음 방문',
+  revisit: '다시 방문',
+  purchase: '건물 구매',
+  upgrade: '랜드마크 구매',
+  toll_paid: '통행료 지불',
+  toll_received: '통행료 수익',
+}
+
+export interface ReceiptLine extends WalletTransaction {
+  /** 이 거래 직후의 잔액 */
+  balanceAfter: number
+}
+
+export interface ReceiptDay {
+  /** "11월 22일" */
+  date: string
+  lines: ReceiptLine[]
+}
+
+/**
+ * 최신순 거래를 날짜별로 묶고, 줄마다 그 거래 직후 잔액을 붙인다.
+ * 서버는 잔액 이력을 주지 않아서, 지금 잔액에서 최신 거래부터 거꾸로 빼 가며 계산한다.
+ */
+export function buildReceipt(transactions: WalletTransaction[], currentBalance: number): ReceiptDay[] {
+  const days: ReceiptDay[] = []
+  let balance = currentBalance
+  for (const transaction of transactions) {
+    const date = formatTransactionDate(transaction.createdAt)
+    const line = { ...transaction, balanceAfter: balance }
+    balance -= transaction.amount
+    const last = days.at(-1)
+    if (last && last.date === date) last.lines.push(line)
+    else days.push({ date, lines: [line] })
+  }
+  return days
+}
+
+/** "2026-11-28T23:10:00+09:00" → "11월 28일" (사용자 기기 시간 기준) */
+export function formatTransactionDate(createdAt: string): string {
+  const date = new Date(createdAt)
+  if (Number.isNaN(date.getTime())) return ''
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`
+}
 
 /** 100 → "+100", -30 → "−30", 0 → "0" */
 export function formatCoinChange(amount: number): string {

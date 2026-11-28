@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { describeSettlement, formatCoinChange, isFirstVisitReward } from './Wallet'
+import { buildReceipt, describeSettlement, formatCoinChange, formatTransactionDate, isFirstVisitReward, TRANSACTION_LABELS } from './Wallet'
 
 describe('지갑 정산 문구', () => {
   it('늘어나면 +, 줄어들면 −로 보여준다', () => {
@@ -32,5 +32,32 @@ describe('지갑 정산 문구', () => {
     expect(isFirstVisitReward({ reward: 100, tollPaid: 0, balance: 440 })).toBe(true)
     expect(isFirstVisitReward({ reward: 10, tollPaid: 0, balance: 350 })).toBe(false)
     expect(isFirstVisitReward(undefined)).toBe(false)
+  })
+})
+
+describe('영수증', () => {
+  it('거래 종류마다 이름이 있다', () => {
+    expect(TRANSACTION_LABELS.toll_paid).toBe('통행료 지불')
+    expect(TRANSACTION_LABELS.toll_received).toBe('통행료 수익')
+    expect(TRANSACTION_LABELS.upgrade).toBe('랜드마크 구매')
+  })
+
+  it('날짜를 "11월 28일"로 보여주고, 잘못된 값은 비운다', () => {
+    expect(formatTransactionDate('2026-11-28T12:00:00+09:00')).toMatch(/^11월 2[78]일$/)
+    expect(formatTransactionDate('없음')).toBe('')
+  })
+
+  it('날짜별로 묶고, 줄마다 거래 직후 잔액을 지금 잔액에서 거꾸로 계산한다', () => {
+    const days = buildReceipt(
+      [
+        { id: 3, type: 'toll_paid', amount: -30, regionCode: 'a', createdAt: '2026-11-22T16:00:01+09:00' },
+        { id: 2, type: 'first_visit', amount: 100, regionCode: 'a', createdAt: '2026-11-22T16:00:00+09:00' },
+        { id: 1, type: 'revisit', amount: 10, regionCode: 'b', createdAt: '2026-11-20T12:00:00+09:00' },
+      ],
+      310,
+    )
+    expect(days).toHaveLength(2)
+    expect(days[0].lines.map((line) => line.balanceAfter)).toEqual([310, 340])
+    expect(days[1].lines[0].balanceAfter).toBe(240)
   })
 })

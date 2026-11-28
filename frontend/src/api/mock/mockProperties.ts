@@ -5,7 +5,7 @@
 import type { Property } from '../../features/game/domain/Property'
 
 const properties = new Map<string, Property>([
-  ['4111560000', { regionCode: '4111560000', ownerGroupId: 102, ownerGroupName: '과동기 탐험대', level: 'landmark' }],
+  ['4111574000', { regionCode: '4111574000', ownerGroupId: 102, ownerGroupName: '과동기 탐험대', level: 'landmark' }],
   ['4111156000', { regionCode: '4111156000', ownerGroupId: 102, ownerGroupName: '과동기 탐험대', level: 'building' }],
 ])
 
