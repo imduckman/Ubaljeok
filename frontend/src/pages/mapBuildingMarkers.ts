@@ -59,7 +59,7 @@ export function findBuildingPosition(geometry: Geometry | null): [number, number
   return best
 }
 
-/** 기존 소유 정보로 건물 마커만 표시한다. 그룹 전환 시 요청 결과와 마커를 폐기한다. */
+/** 기존 소유 정보로 건물과 랜드마크 마커를 표시한다. 그룹 전환 시 요청 결과와 마커를 폐기한다. */
 export function mountBuildingMarkers(
   map: MapLibreMap,
   boundaries: GeoJSON,
@@ -121,7 +121,7 @@ export function mountBuildingMarkers(
       }
 
       const { region, ownership } = result.value
-      if (ownership.status === 'unowned' || ownership.level !== 'building') continue
+      if (ownership.status === 'unowned') continue
 
       const button = document.createElement('button')
       button.type = 'button'
@@ -129,9 +129,13 @@ export function mountBuildingMarkers(
         ownership.status === 'ours' ? styles.ours : styles.theirs
       }`
       const owner = ownership.status === 'ours' ? '우리 그룹' : ownership.ownerGroupName
-      button.setAttribute('aria-label', `${region.name}, ${owner} 건물, 동네 상세 열기`)
-      button.title = `${region.name} · ${owner} 건물`
-      button.innerHTML = '<svg viewBox="0 0 48 56" aria-hidden="true" focusable="false"><ellipse cx="24" cy="49" rx="17" ry="5" fill="#000" opacity=".12"/><path d="M8 39 24 31 40 39 24 47Z" fill="currentColor" opacity=".5"/><path d="M8 39 24 47V53L8 45Z" fill="currentColor"/><path d="M24 47 40 39V45L24 53Z" fill="currentColor" opacity=".8"/><path d="M14 20 24 15 34 20 24 25Z" fill="currentColor" opacity=".45"/><path d="M14 20 24 25V43L14 38Z" fill="currentColor"/><path d="M24 25 34 20V38L24 43Z" fill="currentColor" opacity=".8"/><path d="M18 26V30M18 33V37M29 26V30M29 33V37" stroke="#fff" stroke-width="2" opacity=".8"/></svg>'
+      const isLandmark = ownership.level === 'landmark'
+      const buildingLabel = isLandmark ? '랜드마크' : '건물'
+      button.setAttribute('aria-label', `${region.name}, ${owner} ${buildingLabel}, 동네 상세 열기`)
+      button.title = `${region.name} · ${owner} ${buildingLabel}`
+      button.innerHTML = isLandmark
+        ? '<svg viewBox="0 0 48 56" aria-hidden="true" focusable="false"><ellipse cx="24" cy="50" rx="17" ry="5" fill="#000" opacity=".12"/><path d="M8 41 24 33 40 41 24 49Z" fill="currentColor" opacity=".5"/><path d="M8 41 24 49V55L8 47Z" fill="currentColor"/><path d="M24 49 40 41V47L24 55Z" fill="currentColor" opacity=".8"/><path d="M16 23 24 8 32 23 24 27Z" fill="currentColor" opacity=".5"/><path d="M16 23 24 27V44L16 40Z" fill="currentColor"/><path d="M24 27 32 23V40L24 44Z" fill="currentColor" opacity=".8"/><path d="M24 8V1" stroke="currentColor" stroke-width="1.5"/><path d="M25 1 36 4 25 8Z" fill="var(--coin)"/></svg>'
+        : '<svg viewBox="0 0 48 56" aria-hidden="true" focusable="false"><ellipse cx="24" cy="49" rx="17" ry="5" fill="#000" opacity=".12"/><path d="M8 39 24 31 40 39 24 47Z" fill="currentColor" opacity=".5"/><path d="M8 39 24 47V53L8 45Z" fill="currentColor"/><path d="M24 47 40 39V45L24 53Z" fill="currentColor" opacity=".8"/><path d="M14 20 24 15 34 20 24 25Z" fill="currentColor" opacity=".45"/><path d="M14 20 24 25V43L14 38Z" fill="currentColor"/><path d="M24 25 34 20V38L24 43Z" fill="currentColor" opacity=".8"/><path d="M18 26V30M18 33V37M29 26V30M29 33V37" stroke="#fff" stroke-width="2" opacity=".8"/></svg>'
       button.addEventListener('click', (event) => {
         event.stopPropagation()
         if (!signal.aborted) onSelect(region)
